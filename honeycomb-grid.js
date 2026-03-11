@@ -302,6 +302,43 @@
     return merged.length > 0 ? merged : null;
   };
 
+  function minDiamondsOnGridForLevel(lv) {
+    // 레벨이 오를수록 "항상 보드에 보이는" 다이아 최소치도 완만히 증가
+    // lv1~5:2, lv6~15:3, lv16~30:4, lv31+:5
+    if (lv <= 5) return 2;
+    if (lv <= 15) return 3;
+    if (lv <= 30) return 4;
+    return 5;
+  }
+  function ensureMinimumDiamonds() {
+    var want = Math.min(G.maxDiamondsOnGrid(), minDiamondsOnGridForLevel(G.level));
+    var cur = G.countDiamondsOnGrid();
+    if (cur >= want) return;
+
+    // 아이템/다이아가 아닌 일반 셀을 랜덤하게 다이아로 승격
+    var candidates = [];
+    for (var r = 0; r < G.ROWS; r++) {
+      for (var c = 0; c < G.COLS; c++) {
+        var cell = G.get(r, c);
+        if (!cell) continue;
+        if (cell.diamond || cell.bomb || cell.missile || cell.cross) continue;
+        candidates.push({ r: r, c: c });
+      }
+    }
+    for (var i = candidates.length - 1; i > 0; i--) {
+      var j = Math.floor(Math.random() * (i + 1));
+      var tmp = candidates[i]; candidates[i] = candidates[j]; candidates[j] = tmp;
+    }
+    for (var k = 0; k < candidates.length && cur < want; k++) {
+      var p = candidates[k];
+      var cc = G.get(p.r, p.c);
+      if (!cc || cc.diamond || cc.bomb || cc.missile || cc.cross) continue;
+      cc.diamond = true;
+      G.set(p.r, p.c, cc);
+      cur++;
+    }
+  }
+
   G.refillOnlyRemoved = function (toRemove, allowChainMatch) {
     var seen = {};
     var list = [];
@@ -320,6 +357,7 @@
       if (G.get(t.r, t.c).diamond) diamondCount++;
     }
     G.totalRemoved += list.length;
+    ensureMinimumDiamonds();
     return list.length;
   };
 
@@ -335,6 +373,7 @@
       }
     }
     G.resolveInitialMatches();
+    ensureMinimumDiamonds();
   };
 
   G.resolveInitialMatches = function () {
