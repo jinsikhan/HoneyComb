@@ -61,8 +61,24 @@
     var n = Math.min(3 + lv, 6);
     return G.HEX_COLORS.slice(0, n);
   };
-  G.getDiamondsToNextLevel = function (lv) { return 2 * lv + 1; };
-  G.maxDiamondsOnGrid = function () { return 2 + Math.min(G.level, 2); };
+  /**
+   * 다이아 밸런스(캐주얼 곡선):
+   * - 기존: 필요 다이아(2*lv+1)는 급격히 증가, 반면 최대 동시 다이아 수는 4로 고정 → 후반 난이도 급상승
+   * - 변경: 필요량 증가 완만화 + 레벨이 오를수록 보드 내 다이아 상한/드랍 확률을 완만히 증가
+   */
+  G.getDiamondsToNextLevel = function (lv) {
+    // lv1=4, lv10=16, lv12=19, lv50=68 정도(기존 lv50=101 대비 완만)
+    return Math.max(3, Math.round(3 + lv * 1.3));
+  };
+  G.maxDiamondsOnGrid = function () {
+    // 다이아가 "안 보이는" 체감을 줄이기 위해 9레벨 이후 상한을 더 빠르게 증가시킴
+    // lv1~4: 4, lv5~8: 5, lv9~12: 6, lv13~16: 7 ... (상한 16)
+    return Math.min(16, 4 + Math.floor(Math.max(0, G.level + 3) / 4));
+  };
+  function diamondChanceForLevel(lv) {
+    // lv1≈0.24, lv9≈0.30, lv20≈0.39, lv30≈0.45에서 캡
+    return Math.min(0.45, 0.23 + lv * 0.008);
+  }
   G.countDiamondsOnGrid = function () {
     var n = 0;
     for (var r = 0; r < G.ROWS; r++)
@@ -114,7 +130,7 @@
       colorIdx = Math.floor(Math.random() * colors.length);
     }
     var isDiamond = false;
-    if (allowDiamond && !isBomb && !isMissile && !isCross && Math.random() < 0.28) isDiamond = true;
+    if (allowDiamond && !isBomb && !isMissile && !isCross && Math.random() < diamondChanceForLevel(G.level)) isDiamond = true;
     return { color: colors[colorIdx], bomb: isBomb, missile: isMissile, cross: isCross, diamond: isDiamond };
   };
 
@@ -144,7 +160,8 @@
       if (G.countGroupIfSet(r, c, colors[k]) < 3) safe.push(colors[k]);
     }
     var pool = safe.length > 0 ? safe : colors;
-    if (allowChainMatch && Math.random() < 0.12) pool = colors;
+    // 연쇄 중에는 일부러 매치가 생기도록 확률을 올려 x3/x4가 더 나오게
+    if (allowChainMatch && Math.random() < 0.42) pool = colors;
     var color = pool[Math.floor(Math.random() * pool.length)];
     var allowItem = G.itemsUnlocked && G.totalRemoved >= getItemThreshold();
     var itemMult = 1 / (1 + (G.level - 1) * 0.28);
@@ -152,7 +169,7 @@
     var isMissile = allowItem && !isBomb && Math.random() < G.MISSILE_CHANCE * itemMult;
     var isCross = allowItem && !isBomb && !isMissile && Math.random() < G.CROSS_CHANCE * itemMult;
     var isDiamond = false;
-    if (allowDiamond && !isBomb && !isMissile && !isCross && Math.random() < 0.28) isDiamond = true;
+    if (allowDiamond && !isBomb && !isMissile && !isCross && Math.random() < diamondChanceForLevel(G.level)) isDiamond = true;
     return { color: color, bomb: isBomb, missile: isMissile, cross: isCross, diamond: isDiamond };
   };
 
