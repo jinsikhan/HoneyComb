@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>HoneyComb – 벌집 퍼즐</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="honeycomb.css">
+</head>
+<body>
+  <div class="game">
+    <h1>HoneyComb</h1>
+    <p class="sub">클릭↔클릭으로 인접 블록 맞바꾸기 · 3개 이상 맞으면 제거</p>
+    <div class="stats-bar">
+      <div class="stat"><span class="stat-icon">⭐</span> Lv.<span class="value" id="hexLevel">1</span></div>
+      <div class="stat"><span class="stat-icon">💎</span> <span class="value" id="hexDiamonds">0/3</span></div>
+      <div class="stat"><span class="stat-icon">🏆</span> <span class="value" id="hexScore">0</span></div>
+      <div class="stat timer" id="timerWrap"><span class="stat-icon">⏱</span> <span class="value" id="hexTimer">30</span>초</div>
+    </div>
+    <div class="progress-wrap">
+      <div class="progress-bar" id="levelProgress" style="width: 0%;"></div>
+    </div>
+    <div class="hex-canvas-wrap">
+      <canvas id="hexCanvas" width="400" height="560"></canvas>
+    </div>
+    <p class="mode-hint">클릭→클릭: 인접 블록 맞바꾸기 (3개 이상 맞으면 제거)</p>
+    <p class="combo-hint">리필 후 또 맞으면 <strong>연쇄</strong> → 더블·트리플·익사이팅</p>
+    <div id="gameOverOverlay" class="game-over-overlay" hidden aria-label="게임 오버">
+      <button type="button" id="gameOverRestartBtn" class="game-over-restart-btn">다시 하기</button>
+    </div>
+  </div>
+
+  <script src="honeycomb-state.js"></script>
+  <script src="honeycomb-grid.js"></script>
+  <script src="honeycomb-draw.js"></script>
+  <script src="honeycomb-audio.js"></script>
+  <script src="honeycomb-session.js"></script>
+  <script src="honeycomb-game.js"></script>
+  <script src="honeycomb-input.js"></script>
+  <script src="honeycomb-main.js"></script>
+</body>
+</html>
