@@ -18,7 +18,8 @@
   G.gridOffsetX = 0;
   G.gridOffsetY = 0;
   G.gridScale = 1;
-  G.HEX_COLORS = ['#e74c3c', '#f1c40f', '#2ecc71', '#3498db', '#9b59b6', '#e67e22'];
+  // 기본 6색 + (Lv.71+) 7번째 색 추가
+  G.HEX_COLORS = ['#e74c3c', '#f1c40f', '#2ecc71', '#3498db', '#9b59b6', '#e67e22', '#06b6d4'];
   G.POINTS_PER_LEVEL = 450;
   G.BOMB_CHANCE = 0.06;
   G.MISSILE_CHANCE = 0.04;

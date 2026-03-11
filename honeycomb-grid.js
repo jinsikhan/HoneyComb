@@ -58,7 +58,9 @@
     G.gridOffsetY = (G.CANVAS_HEIGHT - h * G.gridScale) / 2;
   };
   G.getColorsForLevel = function (lv) {
-    var n = Math.min(3 + lv, 6);
+    // Lv.70까지는 최대 6색, Lv.71부터 7번째 색을 추가해 난이도 한 단계 상승
+    var cap = (lv >= 71) ? 7 : 6;
+    var n = Math.min(3 + lv, cap);
     return G.HEX_COLORS.slice(0, n);
   };
   /**
