@@ -96,6 +96,8 @@
     G.spawnBurstParticles(unique);
 
     G.diamondsRemovedThisLevel += diamondsInGroup;
+    // 연쇄(콤보) 중에도 다이아 진행도를 즉시 갱신해 "안 올라가는" 체감을 방지
+    G.updateProgressBar();
     if (G.comboCount === 1) G.removedThisLevel += unique.length;
     var baseScore = unique.length * 10;
     var comboBonus = G.comboCount > 1 ? (G.comboCount - 1) * 12 : 0;

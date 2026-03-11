@@ -160,8 +160,8 @@
       if (G.countGroupIfSet(r, c, colors[k]) < 3) safe.push(colors[k]);
     }
     var pool = safe.length > 0 ? safe : colors;
-    // 연쇄 중에는 일부러 매치가 생기도록 확률을 올려 x3/x4가 더 나오게
-    if (allowChainMatch && Math.random() < 0.42) pool = colors;
+    // 연쇄 중에도 x3/x4가 "너무 자주" 뜨지 않도록 확률을 보수적으로 조정
+    if (allowChainMatch && Math.random() < 0.18) pool = colors;
     var color = pool[Math.floor(Math.random() * pool.length)];
     var allowItem = G.itemsUnlocked && G.totalRemoved >= getItemThreshold();
     var itemMult = 1 / (1 + (G.level - 1) * 0.28);
