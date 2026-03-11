@@ -39,6 +39,18 @@
         else if (left <= 20) G.timerWrap.classList.add('warning');
       }
       if (elapsed >= G.levelTimeLimitSec) {
+        // 남은 시간이 0초가 되는 틱에 미션 완료가 함께 발생하면 "성공"을 우선한다.
+        // (미션 완료 직후에도 게임오버 오버레이가 뜨는 버그 방지)
+        var need = G.getDiamondsToNextLevel(G.level);
+        var missionDone = G.diamondsRemovedThisLevel >= need;
+        if (G.pendingLevelUp || G.levelUpUntil > 0 || missionDone) {
+          if (missionDone && !G.pendingLevelUp) {
+            G.pendingLevelUp = true;
+            G.resetInputState();
+            if (G.gameOverOverlay) G.gameOverOverlay.setAttribute('hidden', '');
+          }
+          return;
+        }
         if (G.timerIntervalId) clearInterval(G.timerIntervalId);
         G.timerIntervalId = null;
         G.gameOver = true;
@@ -155,6 +167,9 @@
 
       if (G.diamondsRemovedThisLevel >= needToNext) {
         G.pendingLevelUp = true;
+        // 타이머 임박/오버레이 상태에서도 미션 완료가 우선이므로 오버레이를 숨긴다.
+        G.gameOver = false;
+        if (G.gameOverOverlay) G.gameOverOverlay.setAttribute('hidden', '');
         G.comboDrawLoop();
         if (typeof G.saveSession === 'function') G.saveSession(true);
         return;

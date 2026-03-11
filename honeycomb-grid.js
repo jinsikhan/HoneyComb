@@ -76,8 +76,9 @@
     return Math.min(16, 4 + Math.floor(Math.max(0, G.level + 3) / 4));
   };
   function diamondChanceForLevel(lv) {
-    // lv1≈0.24, lv9≈0.30, lv20≈0.39, lv30≈0.45에서 캡
-    return Math.min(0.45, 0.23 + lv * 0.008);
+    // 다이아가 부족하게 느껴질 때를 대비해 소폭 상향
+    // lv1≈0.255, lv9≈0.32, lv20≈0.41, lv30≈0.47에서 캡
+    return Math.min(0.47, 0.24 + lv * 0.0085);
   }
   G.countDiamondsOnGrid = function () {
     var n = 0;
@@ -304,11 +305,12 @@
 
   function minDiamondsOnGridForLevel(lv) {
     // 레벨이 오를수록 "항상 보드에 보이는" 다이아 최소치도 완만히 증가
-    // lv1~5:2, lv6~15:3, lv16~30:4, lv31+:5
+    // lv1~5:2, lv6~10:3, lv11~20:4, lv21~35:5, lv36+:6
     if (lv <= 5) return 2;
-    if (lv <= 15) return 3;
-    if (lv <= 30) return 4;
-    return 5;
+    if (lv <= 10) return 3;
+    if (lv <= 20) return 4;
+    if (lv <= 35) return 5;
+    return 6;
   }
   function ensureMinimumDiamonds() {
     var want = Math.min(G.maxDiamondsOnGrid(), minDiamondsOnGridForLevel(G.level));
