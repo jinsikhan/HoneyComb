@@ -44,6 +44,20 @@
     G.draw();
     G.attachInput();
 
+    var newGameBtn = document.getElementById('newGameBtn');
+    if (newGameBtn && typeof G.restartFromBeginning === 'function') {
+      function doNewGame(e) {
+        if (e) { e.preventDefault(); e.stopPropagation(); }
+        G.restartFromBeginning();
+      }
+      newGameBtn.addEventListener('click', doNewGame);
+      newGameBtn.addEventListener('touchend', function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        G.restartFromBeginning();
+      }, { passive: false });
+    }
+
     // 리사이즈 시 캔버스·그리드 다시 맞춤 (모바일 회전 등)
     function resizeCanvas() {
       var w = (wrap && wrap.offsetWidth > 0) ? wrap.offsetWidth : Math.min(400, (window.innerWidth || 400) - 24);

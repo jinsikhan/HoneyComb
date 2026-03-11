@@ -13,10 +13,14 @@
 
   G.updateProgressBar = function () {
     if (!G.levelProgressEl) return;
-    var need = G.getDiamondsToNextLevel(G.level);
-    var pct = need > 0 ? Math.min(100, (G.diamondsRemovedThisLevel / need) * 100) : 100;
-    G.levelProgressEl.style.width = pct + '%';
-    if (G.diamondsEl) G.diamondsEl.textContent = G.diamondsRemovedThisLevel + '/' + need;
+    if (G._progressBarRaf) return;
+    G._progressBarRaf = requestAnimationFrame(function () {
+      G._progressBarRaf = null;
+      var need = G.getDiamondsToNextLevel(G.level);
+      var pct = need > 0 ? Math.min(100, (G.diamondsRemovedThisLevel / need) * 100) : 100;
+      G.levelProgressEl.style.width = pct + '%';
+      if (G.diamondsEl) G.diamondsEl.textContent = G.diamondsRemovedThisLevel + '/' + need;
+    });
   };
 
   G.startLevelTimer = function () {
@@ -371,6 +375,51 @@
     if (G.scoreEl) G.scoreEl.textContent = G.score;
     if (G.levelEl) G.levelEl.textContent = currentLevel;
     if (G.timerEl) G.timerEl.textContent = G.getLevelTimeLimit(currentLevel);
+    if (G.timerWrap) G.timerWrap.classList.remove('warning', 'danger');
+    G.applyGridSize();
+    G.initGrid();
+    G.updateProgressBar();
+    G.startLevelTimer();
+    G.draw();
+    if (typeof G.saveSession === 'function') G.saveSession(true);
+  };
+
+  /** 레벨 1부터 완전 새로 시작 (세션 삭제) */
+  G.restartFromBeginning = function () {
+    if (typeof G.clearSession === 'function') G.clearSession();
+    G.level = 1;
+    G.score = 0;
+    G.totalRemoved = 0;
+    G.gameOver = false;
+    G.gameOverUntil = 0;
+    if (G.gameOverOverlay) G.gameOverOverlay.setAttribute('hidden', '');
+    if (G.timerIntervalId) clearInterval(G.timerIntervalId);
+    G.timerIntervalId = null;
+    G.timerGeneration++;
+    G.levelStartTime = Date.now();
+    G.lastKnownTimeLeft = 999;
+    G.resetInputState();
+    G.swapAnim = null;
+    G.hexAnim = null;
+    G.refillAnim = null;
+    G.removeAnim = null;
+    G.burstParticles = [];
+    if (G.hexAnimIntervalId != null) clearInterval(G.hexAnimIntervalId);
+    G.hexAnimIntervalId = null;
+    G.matchDelayUntil = 0;
+    if (G.matchDelayTimerId) clearTimeout(G.matchDelayTimerId);
+    G.matchDelayTimerId = null;
+    G.chainInProgress = false;
+    if (G.chainStepTimerId) clearTimeout(G.chainStepTimerId);
+    G.chainStepTimerId = null;
+    G.pendingLevelUp = false;
+    G.itemsUnlocked = false;
+    G.removedThisLevel = 0;
+    G.diamondsRemovedThisLevel = 0;
+    G.comboCount = 0;
+    if (G.scoreEl) G.scoreEl.textContent = 0;
+    if (G.levelEl) G.levelEl.textContent = 1;
+    if (G.timerEl) G.timerEl.textContent = G.getLevelTimeLimit(1);
     if (G.timerWrap) G.timerWrap.classList.remove('warning', 'danger');
     G.applyGridSize();
     G.initGrid();
