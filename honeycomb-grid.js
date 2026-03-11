@@ -48,6 +48,11 @@
   G.applyGridSize = function () {
     var R_BASE = 28, GAP_BASE = 5;
     var sz = G.getGridSize(G.level);
+    // 모바일 등 작은 캔버스에서는 그리드 최대 크기 제한 → 블럭이 너무 작아지지 않도록
+    var maxRC = (G.CANVAS_WIDTH >= 380) ? 12 : 9;
+    if (sz.rows > maxRC || sz.cols > maxRC) {
+      sz = { rows: Math.min(maxRC, sz.rows), cols: Math.min(maxRC, sz.cols) };
+    }
     G.ROWS = sz.rows;
     G.COLS = sz.cols;
     G.R = R_BASE;
@@ -56,9 +61,12 @@
     G.STEP_Y = 1.5 * G.R + G.GAP;
     var w = 2 * G.GAP + (Math.sqrt(3) * G.R) / 2 + (G.COLS - 1) * G.STEP_X + G.STEP_X * 0.5 + 2 * G.R;
     var h = 2 * G.GAP + 2 * G.R + (G.ROWS - 1) * G.STEP_Y;
-    G.gridScale = Math.min(G.CANVAS_WIDTH / w, G.CANVAS_HEIGHT / h);
+    // 세로를 꽉 채우기 우선 (밑이 비어 보이는 현상 방지). 가로가 넘치면 맞춤으로 전환
+    G.gridScale = G.CANVAS_HEIGHT / h;
+    var fitsWidth = (w * G.gridScale <= G.CANVAS_WIDTH);
+    if (!fitsWidth) G.gridScale = Math.min(G.CANVAS_WIDTH / w, G.CANVAS_HEIGHT / h);
     G.gridOffsetX = (G.CANVAS_WIDTH - w * G.gridScale) / 2;
-    G.gridOffsetY = (G.CANVAS_HEIGHT - h * G.gridScale) / 2;
+    G.gridOffsetY = fitsWidth ? 0 : (G.CANVAS_HEIGHT - h * G.gridScale) / 2;
   };
   G.getColorsForLevel = function (lv) {
     // Lv.70까지는 최대 6색, Lv.71부터 7번째 색을 추가해 난이도 한 단계 상승

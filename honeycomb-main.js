@@ -21,6 +21,10 @@
     G.gameOverOverlay = document.getElementById('gameOverOverlay');
     G.gameOverRestartBtn = document.getElementById('gameOverRestartBtn');
 
+    // 모바일 등 작은 화면에서 캔버스를 컨테이너 너비에 맞춤 → 블럭이 너무 작아지는 것 방지
+    var wrap = document.querySelector('.hex-canvas-wrap');
+    var availW = (wrap && wrap.offsetWidth > 0) ? wrap.offsetWidth : Math.min(400, (window.innerWidth || 400) - 24);
+    G.CANVAS_WIDTH = Math.min(400, Math.max(280, availW));
     G.CANVAS_HEIGHT = Math.round(G.CANVAS_WIDTH * G.ASPECT_RATIO);
     canvas.width = G.CANVAS_WIDTH;
     canvas.height = G.CANVAS_HEIGHT;
@@ -28,14 +32,31 @@
     // 세션 복구(가능하면 이어하기), 실패하면 새로 시작
     var restored = false;
     if (typeof G.loadSession === 'function') restored = G.loadSession();
+    var savedRows = G.ROWS;
+    var savedCols = G.COLS;
+    G.applyGridSize();
+    if (restored && (G.ROWS !== savedRows || G.COLS !== savedCols)) G.initGrid();
     if (!restored) {
-      G.applyGridSize();
       G.initGrid();
-      G.updateProgressBar();
     }
+    G.updateProgressBar();
     G.startLevelTimer();
     G.draw();
     G.attachInput();
+
+    // 리사이즈 시 캔버스·그리드 다시 맞춤 (모바일 회전 등)
+    function resizeCanvas() {
+      var w = (wrap && wrap.offsetWidth > 0) ? wrap.offsetWidth : Math.min(400, (window.innerWidth || 400) - 24);
+      w = Math.min(400, Math.max(280, w));
+      if (w === G.CANVAS_WIDTH) return;
+      G.CANVAS_WIDTH = w;
+      G.CANVAS_HEIGHT = Math.round(w * G.ASPECT_RATIO);
+      canvas.width = G.CANVAS_WIDTH;
+      canvas.height = G.CANVAS_HEIGHT;
+      G.applyGridSize();
+      G.draw();
+    }
+    window.addEventListener('resize', resizeCanvas);
   }
 
   if (document.readyState === 'loading') {
