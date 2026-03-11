@@ -25,9 +25,14 @@
     canvas.width = G.CANVAS_WIDTH;
     canvas.height = G.CANVAS_HEIGHT;
 
-    G.applyGridSize();
-    G.initGrid();
-    G.updateProgressBar();
+    // 세션 복구(가능하면 이어하기), 실패하면 새로 시작
+    var restored = false;
+    if (typeof G.loadSession === 'function') restored = G.loadSession();
+    if (!restored) {
+      G.applyGridSize();
+      G.initGrid();
+      G.updateProgressBar();
+    }
     G.startLevelTimer();
     G.draw();
     G.attachInput();

@@ -50,7 +50,9 @@
           G.gameOverOverlay.removeAttribute('hidden');
           if (G.gameOverRestartBtn) G.gameOverRestartBtn.focus();
         }
+        if (typeof G.saveSession === 'function') G.saveSession(true);
       }
+      if (typeof G.saveSession === 'function') G.saveSession(false);
     }, 200);
   };
 
@@ -152,10 +154,12 @@
       if (G.diamondsRemovedThisLevel >= needToNext) {
         G.pendingLevelUp = true;
         G.comboDrawLoop();
+        if (typeof G.saveSession === 'function') G.saveSession(true);
         return;
       }
       G.resetInputState();
       G.comboDrawLoop();
+      if (typeof G.saveSession === 'function') G.saveSession(true);
     }, G.REMOVE_ANIM_MS);
   };
 
@@ -181,6 +185,7 @@
         G.levelUpStartTime = Date.now();
         G.levelUpDrawLoop();
         G.playLevelUp();
+        if (typeof G.saveSession === 'function') G.saveSession(true);
       } else {
         requestAnimationFrame(G.comboDrawLoop);
       }
@@ -356,5 +361,6 @@
     G.updateProgressBar();
     G.startLevelTimer();
     G.draw();
+    if (typeof G.saveSession === 'function') G.saveSession(true);
   };
 })(window.HoneyComb = window.HoneyComb || {});
