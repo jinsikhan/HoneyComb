@@ -35,12 +35,15 @@
 
   G.getGridSize = function (lv) {
     if (lv <= 1) return { rows: 5, cols: 5 };
-    if (lv === 2) return { rows: 6, cols: 5 };
+    if (lv === 2) return { rows: 5, cols: 6 };
     if (lv === 3) return { rows: 6, cols: 6 };
-    if (lv === 4) return { rows: 7, cols: 6 };
-    if (lv === 5) return { rows: 7, cols: 7 };
-    if (lv === 6) return { rows: 8, cols: 7 };
-    return { rows: 8, cols: 8 };
+    if (lv === 4 || lv === 5) return { rows: 6, cols: 7 }; /* 5에서 블럭 수 동일 유지 → 자연스러운 증가 */
+    if (lv === 6) return { rows: 7, cols: 7 };
+    /* 레벨 7 이상: 위아래 여백 활용해 단계적으로 그리드 확대 (최대 12x12) */
+    var step = Math.min(7, Math.floor((lv - 1) / 2));
+    var rows = 5 + step;
+    var cols = 5 + Math.min(7, Math.floor(lv / 2));
+    return { rows: Math.min(12, rows), cols: Math.min(12, cols) };
   };
   G.applyGridSize = function () {
     var R_BASE = 28, GAP_BASE = 5;
@@ -69,8 +72,7 @@
    * - 변경: 필요량 증가 완만화 + 레벨이 오를수록 보드 내 다이아 상한/드랍 확률을 완만히 증가
    */
   G.getDiamondsToNextLevel = function (lv) {
-    // lv1=4, lv10=16, lv12=19, lv50=68 정도(기존 lv50=101 대비 완만)
-    return Math.max(3, Math.round(3 + lv * 1.3));
+    return Math.max(3, Math.round(3 + lv * 1.1));
   };
   G.maxDiamondsOnGrid = function () {
     // 다이아가 "안 보이는" 체감을 줄이기 위해 9레벨 이후 상한을 더 빠르게 증가시킴
@@ -167,7 +169,10 @@
     if (allowChainMatch && Math.random() < 0.18) pool = colors;
     var color = pool[Math.floor(Math.random() * pool.length)];
     var allowItem = G.itemsUnlocked && G.totalRemoved >= getItemThreshold();
-    var itemMult = 1 / (1 + (G.level - 1) * 0.28);
+    /* 콤보 리필 시: 레벨이 올라갈수록 아이템 드랍 확률 상승 (고레벨에서도 폭탄/미사일/십자 나오도록) */
+    var itemMult = allowChainMatch
+      ? Math.min(1.5, 0.5 + G.level * 0.03)
+      : 1 / (1 + (G.level - 1) * 0.28);
     var isBomb = allowItem && Math.random() < G.BOMB_CHANCE * itemMult;
     var isMissile = allowItem && !isBomb && Math.random() < G.MISSILE_CHANCE * itemMult;
     var isCross = allowItem && !isBomb && !isMissile && Math.random() < G.CROSS_CHANCE * itemMult;
@@ -406,14 +411,14 @@
   };
 
   G.getLevelTimeLimit = function (lv) {
-    if (lv <= 1) return 30;
-    return 55 + Math.min(lv, 10) * 5;
+    if (lv <= 1) return 35;
+    return 60 + Math.min(lv, 12) * 4;
   };
   G.getRemovedToNextLevel = function (lv) {
     if (lv <= 1) return 10;
-    if (lv === 2) return 15;
-    if (lv === 3) return 25;
-    if (lv === 4) return 35;
-    return 35 + (lv - 4) * 10;
+    if (lv === 2) return 14;
+    if (lv === 3) return 22;
+    if (lv === 4) return 30;
+    return 30 + (lv - 4) * 8;
   };
 })(window.HoneyComb = window.HoneyComb || {});

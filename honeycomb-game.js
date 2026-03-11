@@ -129,7 +129,6 @@
       }
     }
     G.matchFlashUntil = Date.now() + 100;
-    if (G.comboCount > 1 && G.levelStartTime) G.levelStartTime -= 3000;
     if (unique.length >= 6) {
       G.bigTextUntil = Date.now() + 1000;
       G.bigText = unique.length >= 8 ? '🎉 대박!!' : '대박!';
