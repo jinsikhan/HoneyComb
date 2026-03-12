@@ -93,12 +93,12 @@
     G.STEP_Y = 1.5 * G.R + G.GAP;
     var w = 2 * G.GAP + (Math.sqrt(3) * G.R) / 2 + (G.COLS - 1) * G.STEP_X + G.STEP_X * 0.5 + 2 * G.R;
     var h = 2 * G.GAP + 2 * G.R + (G.ROWS - 1) * G.STEP_Y;
-    // 세로를 꽉 채우기 우선 (밑이 비어 보이는 현상 방지). 가로가 넘치면 맞춤으로 전환
-    G.gridScale = G.CANVAS_HEIGHT / h;
-    var fitsWidth = (w * G.gridScale <= G.CANVAS_WIDTH);
-    if (!fitsWidth) G.gridScale = Math.min(G.CANVAS_WIDTH / w, G.CANVAS_HEIGHT / h);
+    // 가로를 기준으로 스케일 결정 → 높이는 그리드 비율에 맞게 자동 (위아래 여백 없음)
+    G.gridScale = Math.min(1, G.CANVAS_WIDTH / w);
     G.gridOffsetX = (G.CANVAS_WIDTH - w * G.gridScale) / 2;
-    G.gridOffsetY = fitsWidth ? 0 : (G.CANVAS_HEIGHT - h * G.gridScale) / 2;
+    G.gridOffsetY = 0;
+    G.CANVAS_HEIGHT = Math.round(h * G.gridScale);
+    if (G.canvas) G.canvas.height = G.CANVAS_HEIGHT;
   };
   G.getColorsForLevel = function (lv) {
     // Lv.70까지는 최대 6색, Lv.71부터 7번째 색을 추가해 난이도 한 단계 상승
