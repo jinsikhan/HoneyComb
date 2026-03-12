@@ -594,6 +594,7 @@
     }
     G.totalRemoved += list.length;
     ensureMinimumDiamonds();
+    var didReshuffle = false;
     if (!G.hasValidMove()) {
       var limit = 30;
       while (!G.hasValidMove() && limit-- > 0) {
@@ -602,7 +603,10 @@
         ensureMinimumDiamonds();
       }
       if (!G.hasValidMove()) forceValidMove();
+      didReshuffle = true;
     }
+    // 리셔플한 경우 draw()가 아직 불리기 전이므로 직접 그리기 요청
+    if (didReshuffle && typeof G.draw === 'function') G.draw();
     return list.length;
   };
 
