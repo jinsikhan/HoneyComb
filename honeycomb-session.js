@@ -80,6 +80,11 @@
       G.applyGridSize(data.rows, data.cols);
       G.grid = data.grid;
 
+      // 저장된 보드에 맞출 수가 없으면 복구 직후 바로 재배치(리셔플)
+      if (typeof G.hasValidMove === 'function' && !G.hasValidMove() && typeof G.reshuffleBoard === 'function') {
+        G.reshuffleBoard();
+      }
+
       // UI 반영
       if (G.scoreEl) G.scoreEl.textContent = G.score;
       if (G.levelEl) G.levelEl.textContent = G.level;
