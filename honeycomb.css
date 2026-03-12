@@ -154,6 +154,7 @@ h1 {
     0 0 0 1px rgba(255,200,100,0.08);
   touch-action: manipulation;
   width: min(400px, 100%);
+  aspect-ratio: 1 / 1.4;
   height: auto;
   box-sizing: border-box;
   transform: translateZ(0);
@@ -162,9 +163,11 @@ h1 {
 #hexCanvas {
   display: block;
   width: 100%;
-  height: auto;
+  height: 100%;
+  aspect-ratio: 1 / 1.4;
   cursor: pointer;
   touch-action: manipulation;
+  object-fit: contain;
   min-height: 0;
 }
 .mode-hint {

@@ -115,8 +115,9 @@
       w = Math.min(400, Math.max(280, w));
       if (w === G.CANVAS_WIDTH) return;
       G.CANVAS_WIDTH = w;
+      G.CANVAS_HEIGHT = Math.round(w * G.ASPECT_RATIO);
       canvas.width = G.CANVAS_WIDTH;
-      G.applyGridSize(); // CANVAS_HEIGHT와 canvas.height는 applyGridSize에서 자동 계산
+      canvas.height = G.CANVAS_HEIGHT;
       G.draw();
     }
     window.addEventListener('resize', resizeCanvas);
