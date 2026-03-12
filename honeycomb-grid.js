@@ -94,6 +94,8 @@
   G.getColorsForLevel = function (lv) {
     // Lv.70까지는 최대 6색, Lv.71부터 7번째 색을 추가해 난이도 한 단계 상승
     var cap = (lv >= 71) ? 7 : 6;
+    // 초반 소규모 보드(1~7)는 색을 5개로 제한 → 맞출 수 없는 상태 방지
+    if (lv <= 7) cap = Math.min(cap, 5);
     var n = Math.min(3 + lv, cap);
     return G.HEX_COLORS.slice(0, n);
   };
@@ -375,6 +377,100 @@
     return null;
   };
 
+  /**
+   * 인접한 두 칸을 맞바꿨을 때 3개 이상 매치가 생기는 수가 하나라도 있으면 true.
+   * (시작 직후·리필 후 움직일 수 없는 상태 방지용)
+   */
+  G.hasValidMove = function () {
+    for (var r1 = 0; r1 < G.ROWS; r1++) {
+      for (var c1 = 0; c1 < G.COLS; c1++) {
+        if (!G.inBounds(r1, c1)) continue;
+        var cellA = G.get(r1, c1);
+        if (!cellA) continue;
+        var nb = G.neighbors(r1, c1);
+        for (var i = 0; i < nb.length; i++) {
+          var r2 = nb[i].r, c2 = nb[i].c;
+          var cellB = G.get(r2, c2);
+          if (!cellB) continue;
+          if (G.countGroupIfSet(r1, c1, cellB.color) >= 3 || G.countGroupIfSet(r2, c2, cellA.color) >= 3) return true;
+        }
+      }
+    }
+    return false;
+  };
+
+  /** 보드 내용만 다시 채움(구멍·크기 유지). 셔플 후 유효 수 없으면 반복할 때 사용 */
+  function refillAllCells() {
+    var diamondCount = 0;
+    var keyCount = 0;
+    for (var r = 0; r < G.ROWS; r++) {
+      for (var c = 0; c < G.COLS; c++) {
+        if (!G.inBounds(r, c)) continue;
+        if (G.holes[r + ',' + c]) continue;
+        var allowDiamond = diamondCount < G.maxDiamondsOnGrid();
+        var needKeys = G.getKeysRequiredForLevel(G.level) > 0;
+        var allowKey = needKeys && keyCount < G.maxKeysOnGrid();
+        var cell = G.randCell(r, c, allowDiamond, allowKey);
+        if (cell.diamond) diamondCount++;
+        if (cell.key) keyCount++;
+        G.set(r, c, cell);
+      }
+    }
+  }
+
+  /** 인접한 한 쌍을 스왑하면 3매치가 나오도록 2~3칸 색을 강제. (셔플만으로 안 나올 때 최후 수단) */
+  function forceValidMove() {
+    var colors = G.getColorsForLevel(G.level);
+    if (colors.length < 2) return;
+    var C = colors[0], D = colors[1];
+    var pairs = [];
+    for (var r = 0; r < G.ROWS; r++) {
+      for (var c = 0; c < G.COLS; c++) {
+        if (!G.inBounds(r, c) || G.holes[r + ',' + c]) continue;
+        if (!G.get(r, c)) continue;
+        var nb = G.neighbors(r, c);
+        for (var i = 0; i < nb.length; i++) {
+          var r2 = nb[i].r, c2 = nb[i].c;
+          if (!G.inBounds(r2, c2) || G.holes[r2 + ',' + c2]) continue;
+          if (!G.get(r2, c2)) continue;
+          var key = r + ',' + c + '-' + r2 + ',' + c2;
+          var key2 = r2 + ',' + c2 + '-' + r + ',' + c;
+          if (key < key2) pairs.push({ r1: r, c1: c, r2: r2, c2: c2 });
+        }
+      }
+    }
+    if (pairs.length === 0) return;
+    var p = pairs[Math.floor(Math.random() * pairs.length)];
+    var cell1 = G.get(p.r1, p.c1);
+    var cell2 = G.get(p.r2, p.c2);
+    if (!cell1 || !cell2) return;
+    var base = { bomb: false, missile: false, cross: false, diamond: cell1.diamond, key: cell1.key };
+    G.set(p.r1, p.c1, { color: C, bomb: false, missile: false, cross: false, diamond: cell1.diamond, key: cell1.key });
+    G.set(p.r2, p.c2, { color: D, bomb: false, missile: false, cross: false, diamond: cell2.diamond, key: cell2.key });
+    var nb2 = G.neighbors(p.r2, p.c2);
+    var count = 0;
+    for (var j = 0; j < nb2.length && count < 2; j++) {
+      var r0 = nb2[j].r, c0 = nb2[j].c;
+      if (r0 === p.r1 && c0 === p.c1) continue;
+      if (!G.inBounds(r0, c0) || G.holes[r0 + ',' + c0]) continue;
+      var c0cell = G.get(r0, c0);
+      if (!c0cell) continue;
+      G.set(r0, c0, { color: C, bomb: c0cell.bomb, missile: c0cell.missile, cross: c0cell.cross, diamond: c0cell.diamond, key: c0cell.key });
+      count++;
+    }
+  }
+
+  /** 리필 후 움직일 수 없을 때 한 번 보드를 다시 채워 유효 수가 나오게 함 */
+  G.reshuffleBoard = function () {
+    var limit = 50;
+    while (!G.hasValidMove() && limit-- > 0) {
+      refillAllCells();
+      G.resolveInitialMatches();
+      ensureMinimumDiamonds();
+    }
+    if (!G.hasValidMove()) forceValidMove();
+  };
+
   G.findAllMatchesMerged = function () {
     var visited = {};
     var merged = [];
@@ -499,6 +595,13 @@
     }
     G.resolveInitialMatches();
     ensureMinimumDiamonds();
+    var shuffleLimit = 50;
+    while (!G.hasValidMove() && shuffleLimit-- > 0) {
+      refillAllCells();
+      G.resolveInitialMatches();
+      ensureMinimumDiamonds();
+    }
+    if (!G.hasValidMove()) forceValidMove();
   };
 
   G.resolveInitialMatches = function () {
