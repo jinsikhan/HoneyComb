@@ -4,7 +4,7 @@
 (function (G) {
   'use strict';
 
-  function getItemThreshold() { return 3 + G.level * 2; }
+  function getItemThreshold() { return 2 + G.level * 2; }
   G.getItemThreshold = getItemThreshold;
 
   G.hexToPixel = function (r, c) {
@@ -35,15 +35,16 @@
 
   G.getGridSize = function (lv) {
     if (lv <= 1) return { rows: 5, cols: 5 };
-    if (lv === 2) return { rows: 5, cols: 6 };
-    if (lv === 3) return { rows: 6, cols: 6 };
-    if (lv === 4 || lv === 5) return { rows: 6, cols: 7 }; /* 5에서 블럭 수 동일 유지 → 자연스러운 증가 */
-    if (lv === 6) return { rows: 7, cols: 7 };
-    /* 레벨 7 이상: 위아래 여백 활용해 단계적으로 그리드 확대 (최대 12x12) */
-    var step = Math.min(7, Math.floor((lv - 1) / 2));
-    var rows = 5 + step;
-    var cols = 5 + Math.min(7, Math.floor(lv / 2));
-    return { rows: Math.min(12, rows), cols: Math.min(12, cols) };
+    if (lv === 2) return { rows: 5, cols: 5 };
+    if (lv === 3) return { rows: 5, cols: 6 };
+    if (lv === 4) return { rows: 6, cols: 6 };
+    if (lv === 5 || lv === 6) return { rows: 6, cols: 7 };
+    if (lv === 7 || lv === 8) return { rows: 7, cols: 7 };
+    if (lv === 9 || lv === 10) return { rows: 7, cols: 7 };
+    /* 레벨 11 이상: 단계적으로 그리드 확대 (최대 12x12) */
+    var r = 7 + Math.min(5, Math.floor((lv - 10) / 2));
+    var c = 7 + Math.min(5, Math.floor((lv - 9) / 2));
+    return { rows: Math.min(12, r), cols: Math.min(12, c) };
   };
   G.applyGridSize = function () {
     var R_BASE = 28, GAP_BASE = 5;
@@ -80,7 +81,7 @@
    * - 변경: 필요량 증가 완만화 + 레벨이 오를수록 보드 내 다이아 상한/드랍 확률을 완만히 증가
    */
   G.getDiamondsToNextLevel = function (lv) {
-    return Math.max(3, Math.round(3 + lv * 1.1));
+    return Math.max(3, Math.round(3 + lv * 0.95));
   };
   G.maxDiamondsOnGrid = function () {
     // 다이아가 "안 보이는" 체감을 줄이기 위해 9레벨 이후 상한을 더 빠르게 증가시킴
@@ -88,9 +89,7 @@
     return Math.min(16, 4 + Math.floor(Math.max(0, G.level + 3) / 4));
   };
   function diamondChanceForLevel(lv) {
-    // 다이아가 부족하게 느껴질 때를 대비해 소폭 상향
-    // lv1≈0.255, lv9≈0.32, lv20≈0.41, lv30≈0.47에서 캡
-    return Math.min(0.47, 0.24 + lv * 0.0085);
+    return Math.min(0.48, 0.26 + lv * 0.0075);
   }
   G.countDiamondsOnGrid = function () {
     var n = 0;
@@ -179,7 +178,7 @@
     var allowItem = G.itemsUnlocked && G.totalRemoved >= getItemThreshold();
     /* 콤보 리필 시: 레벨이 올라갈수록 아이템 드랍 확률 상승 (고레벨에서도 폭탄/미사일/십자 나오도록) */
     var itemMult = allowChainMatch
-      ? Math.min(1.5, 0.5 + G.level * 0.03)
+      ? Math.min(1.6, 0.55 + G.level * 0.032)
       : 1 / (1 + (G.level - 1) * 0.28);
     var isBomb = allowItem && Math.random() < G.BOMB_CHANCE * itemMult;
     var isMissile = allowItem && !isBomb && Math.random() < G.MISSILE_CHANCE * itemMult;
@@ -319,12 +318,10 @@
   };
 
   function minDiamondsOnGridForLevel(lv) {
-    // 레벨이 오를수록 "항상 보드에 보이는" 다이아 최소치도 완만히 증가
-    // lv1~5:2, lv6~10:3, lv11~20:4, lv21~35:5, lv36+:6
-    if (lv <= 5) return 2;
-    if (lv <= 10) return 3;
-    if (lv <= 20) return 4;
-    if (lv <= 35) return 5;
+    if (lv <= 8) return 2;
+    if (lv <= 18) return 3;
+    if (lv <= 30) return 4;
+    if (lv <= 45) return 5;
     return 6;
   }
   function ensureMinimumDiamonds() {
@@ -419,8 +416,8 @@
   };
 
   G.getLevelTimeLimit = function (lv) {
-    if (lv <= 1) return 35;
-    return 60 + Math.min(lv, 12) * 4;
+    if (lv <= 1) return 38;
+    return 65 + Math.min(lv, 14) * 3;
   };
   G.getRemovedToNextLevel = function (lv) {
     if (lv <= 1) return 10;
