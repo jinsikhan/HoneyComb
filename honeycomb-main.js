@@ -29,9 +29,25 @@
     canvas.width = G.CANVAS_WIDTH;
     canvas.height = G.CANVAS_HEIGHT;
 
-    // 세션 복구(가능하면 이어하기), 실패하면 새로 시작
+    // QA: URL에 ?level=N 이 있으면 해당 레벨로 시작 (세션 무시, 1~100)
+    var qaLevel = null;
+    var match = /[?&]level=(\d+)/.exec(window.location.search || '');
+    if (match) {
+      var n = parseInt(match[1], 10);
+      if (n >= 1 && n <= 100) qaLevel = n;
+    }
+    if (qaLevel != null) {
+      if (typeof G.clearSession === 'function') G.clearSession();
+      G.level = qaLevel;
+      G.score = 0;
+      G.totalRemoved = 0;
+      G.removedThisLevel = 0;
+      G.diamondsRemovedThisLevel = 0;
+    }
+
+    // 세션 복구(가능하면 이어하기), QA 레벨이 없을 때만
     var restored = false;
-    if (typeof G.loadSession === 'function') restored = G.loadSession();
+    if (qaLevel == null && typeof G.loadSession === 'function') restored = G.loadSession();
     var savedRows = G.ROWS;
     var savedCols = G.COLS;
     G.applyGridSize();
@@ -41,6 +57,11 @@
     }
     G.updateProgressBar();
     G.startLevelTimer();
+    if (qaLevel != null) {
+      if (G.levelEl) G.levelEl.textContent = G.level;
+      if (G.timerEl) G.timerEl.textContent = G.getLevelTimeLimit(G.level);
+      if (G.timerWrap) G.timerWrap.classList.remove('warning', 'danger');
+    }
     G.draw();
     G.attachInput();
 

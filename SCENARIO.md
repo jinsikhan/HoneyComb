@@ -67,6 +67,22 @@
 
 ---
 
-## 4. 변경 이력 (선택)
+## 4. QA용 레벨 직접 실행
 
+특정 레벨에서 게임을 시작하려면 URL에 `?level=N`을 붙입니다. 세션은 무시되고 해당 레벨 보드·시간으로 시작합니다.
+
+| 용도 | URL 예시 |
+|------|----------|
+| 레벨 1 | `HoneyComb.html?level=1` |
+| 레벨 10 | `HoneyComb.html?level=10` |
+| 레벨 20 ~ 100 | `HoneyComb.html?level=20` … `HoneyComb.html?level=100` |
+
+- **유효 범위**: 1 ~ 100 (그 외는 무시되고 세션 복구 또는 레벨 1로 시작)
+- **구현 위치**: honeycomb-main.js — `window.location.search`에서 `level` 파라미터 파싱 후 `G.level` 설정, `clearSession()` 호출
+
+---
+
+## 5. 변경 이력 (선택)
+
+- QA: URL 파라미터 `?level=1~100`으로 특정 레벨 직접 시작 기능 추가 (honeycomb-main.js).
 - 최초 작성: 현재 플로우·연출 문구·코드 위치 정리.
