@@ -295,6 +295,16 @@
     var toDowngrade = []; // 열쇠 블럭: 여기 넣으면 제거되지 않고 열쇠만 사라짐(두 번 깨야 없어짐)
     var hasBomb = false, hasMissile = false, hasCross = false;
     var bombPositions = [], missilePos = null, crossPos = null;
+    function addToRemove(rr, cc) {
+      var cell = G.get(rr, cc);
+      if (!cell) return;
+      var k = rr + ',' + cc;
+      for (var ii = 0; ii < toRemove.length; ii++) {
+        var t = toRemove[ii];
+        if (t.r === rr && t.c === cc) return;
+      }
+      toRemove.push({ r: rr, c: cc });
+    }
     for (var i = 0; i < group.length; i++) {
       var g = group[i];
       var cell = G.get(g.r, g.c);
@@ -304,7 +314,7 @@
       if (cell && cell.key) {
         toDowngrade.push({ r: g.r, c: g.c });
       } else {
-        toRemove.push({ r: g.r, c: g.c });
+        addToRemove(g.r, g.c);
       }
     }
     if (hasBomb && bombPositions.length > 0) {
@@ -319,7 +329,7 @@
         var nb = G.neighbors(pos.r, pos.c);
         for (var j = 0; j < nb.length; j++) {
           var nn = nb[j];
-          if (!toRemove.some(function (t) { return t.r === nn.r && t.c === nn.c; })) toRemove.push({ r: nn.r, c: nn.c });
+          addToRemove(nn.r, nn.c);
           var ncell = G.get(nn.r, nn.c);
           var nkey = nn.r + ',' + nn.c;
           if (ncell && ncell.bomb && !processed[nkey]) queue.push({ r: nn.r, c: nn.c });
@@ -333,19 +343,19 @@
       var cell = G.get(t.r, t.c);
       if (cell && cell.missile) {
         for (var cc = 0; cc < G.COLS; cc++) {
-          if (!G.inBounds(t.r, cc)) continue;
+          if (!G.get(t.r, cc)) continue;
           var k = t.r + ',' + cc;
           if (!seen[k]) { seen[k] = true; toRemove.push({ r: t.r, c: cc }); }
         }
       }
       if (cell && cell.cross) {
         for (var cc = 0; cc < G.COLS; cc++) {
-          if (!G.inBounds(t.r, cc)) continue;
+          if (!G.get(t.r, cc)) continue;
           var k = t.r + ',' + cc;
           if (!seen[k]) { seen[k] = true; toRemove.push({ r: t.r, c: cc }); }
         }
         for (var rr = 0; rr < G.ROWS; rr++) {
-          if (!G.inBounds(rr, t.c)) continue;
+          if (!G.get(rr, t.c)) continue;
           var k = rr + ',' + t.c;
           if (!seen[k]) { seen[k] = true; toRemove.push({ r: rr, c: t.c }); }
         }
@@ -353,18 +363,18 @@
     }
     if (hasMissile && missilePos) {
       for (var cc = 0; cc < G.COLS; cc++) {
-        if (!G.inBounds(missilePos.r, cc)) continue;
-        if (!toRemove.some(function (t) { return t.r === missilePos.r && t.c === cc; })) toRemove.push({ r: missilePos.r, c: cc });
+        if (!G.get(missilePos.r, cc)) continue;
+        addToRemove(missilePos.r, cc);
       }
     }
     if (hasCross && crossPos) {
       for (var cc = 0; cc < G.COLS; cc++) {
-        if (!G.inBounds(crossPos.r, cc)) continue;
-        if (!toRemove.some(function (t) { return t.r === crossPos.r && t.c === cc; })) toRemove.push({ r: crossPos.r, c: cc });
+        if (!G.get(crossPos.r, cc)) continue;
+        addToRemove(crossPos.r, cc);
       }
       for (var rr = 0; rr < G.ROWS; rr++) {
-        if (!G.inBounds(rr, crossPos.c)) continue;
-        if (!toRemove.some(function (t) { return t.r === rr && t.c === crossPos.c; })) toRemove.push({ r: rr, c: crossPos.c });
+        if (!G.get(rr, crossPos.c)) continue;
+        addToRemove(rr, crossPos.c);
       }
     }
     return { toRemove: toRemove, toDowngrade: toDowngrade, bombPositions: bombPositions, missilePos: missilePos, crossPos: crossPos };
