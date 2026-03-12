@@ -115,11 +115,11 @@
     if (G.selected.length >= 3) {
       var result = G.collectToRemove(G.selected);
       if (result.bombPositions && result.bombPositions.length || result.missilePos || result.crossPos) {
-        G.hexAnim = { start: Date.now(), bombPositions: result.bombPositions || [], missilePos: result.missilePos, crossPos: result.crossPos, toRemove: result.toRemove };
+        G.hexAnim = { start: Date.now(), bombPositions: result.bombPositions || [], missilePos: result.missilePos, crossPos: result.crossPos, toRemove: result.toRemove, originalMatch: G.selected };
         G.startHexAnim();
         G.draw();
       } else {
-        G.applyRemove(result.toRemove, false);
+        G.applyRemove(G.selected, false);
         G.draw();
       }
       G.resetInputState();

@@ -20,6 +20,11 @@
       var pct = need > 0 ? Math.min(100, (G.diamondsRemovedThisLevel / need) * 100) : 100;
       G.levelProgressEl.style.width = pct + '%';
       if (G.diamondsEl) G.diamondsEl.textContent = G.diamondsRemovedThisLevel + '/' + need;
+      var keysNeed = G.getKeysRequiredForLevel(G.level);
+      if (G.keysWrap && G.keysEl) {
+        if (keysNeed <= 0) G.keysWrap.style.display = 'none';
+        else { G.keysWrap.style.display = ''; G.keysEl.textContent = G.keysCollectedThisLevel + '/' + keysNeed; }
+      }
     });
   };
 
@@ -47,6 +52,9 @@
         // (미션 완료 직후에도 게임오버 오버레이가 뜨는 버그 방지)
         var need = G.getDiamondsToNextLevel(G.level);
         var missionDone = G.diamondsRemovedThisLevel >= need;
+        if (G.getKeysRequiredForLevel(G.level) > 0) {
+          missionDone = missionDone && G.keysCollectedThisLevel >= G.getKeysRequiredForLevel(G.level);
+        }
         if (G.pendingLevelUp || G.levelUpUntil > 0 || missionDone) {
           if (missionDone && !G.pendingLevelUp) {
             G.pendingLevelUp = true;
@@ -87,6 +95,20 @@
       G.comboCount = 1;
     }
     var result = G.collectToRemove(toRemove);
+
+    // 열쇠 블럭: 제거하지 않고 열쇠만 뗌 (두 번 매치해야 블럭이 없어짐)
+    if (result.toDowngrade && result.toDowngrade.length > 0) {
+      for (var d = 0; d < result.toDowngrade.length; d++) {
+        var pos = result.toDowngrade[d];
+        var cell = G.get(pos.r, pos.c);
+        if (cell && cell.key) {
+          cell.key = false;
+          G.set(pos.r, pos.c, cell);
+        }
+      }
+      G.keysCollectedThisLevel += 1;
+    }
+
     var unique = [];
     var seen = {};
     for (var i = 0; i < result.toRemove.length; i++) {
@@ -101,6 +123,12 @@
       var cell = G.get(unique[i].r, unique[i].c);
       if (cell && cell.diamond) diamondsInGroup++;
     }
+    var keysInRemoved = 0;
+    for (var i = 0; i < unique.length; i++) {
+      var cell = G.get(unique[i].r, unique[i].c);
+      if (cell && cell.key) keysInRemoved++;
+    }
+    if (keysInRemoved > 0) G.keysCollectedThisLevel += keysInRemoved;
     var hasItems = (result.bombPositions && result.bombPositions.length) || result.missilePos || result.crossPos;
     if (!hasItems) { if (G.comboCount >= 2) G.playComboMp3(); else G.playMatchMp3(); }
 
@@ -166,9 +194,10 @@
 
       if (G.scoreEl) G.scoreEl.textContent = G.score;
       var needToNext = G.getDiamondsToNextLevel(G.level);
+      var keysNeed = G.getKeysRequiredForLevel(G.level);
       G.updateProgressBar();
 
-      if (G.diamondsRemovedThisLevel >= needToNext) {
+      if (G.diamondsRemovedThisLevel >= needToNext && G.keysCollectedThisLevel >= keysNeed) {
         G.pendingLevelUp = true;
         // 타이머 임박/오버레이 상태에서도 미션 완료가 우선이므로 오버레이를 숨긴다.
         G.gameOver = false;
@@ -193,6 +222,7 @@
         G.level++;
         G.removedThisLevel = 0;
         G.diamondsRemovedThisLevel = 0;
+        G.keysCollectedThisLevel = 0;
         if (G.timerIntervalId) clearInterval(G.timerIntervalId);
         G.timerIntervalId = null;
         G.applyGridSize();
@@ -290,10 +320,10 @@
         try {
           G.comboCount = 1;
           if (result.bombPositions && result.bombPositions.length || result.missilePos || result.crossPos) {
-            G.hexAnim = { start: Date.now(), bombPositions: result.bombPositions || [], missilePos: result.missilePos, crossPos: result.crossPos, toRemove: toRemoveCopy };
+            G.hexAnim = { start: Date.now(), bombPositions: result.bombPositions || [], missilePos: result.missilePos, crossPos: result.crossPos, toRemove: toRemoveCopy, originalMatch: match };
             G.startHexAnim();
           } else {
-            G.applyRemove(toRemoveCopy, true);
+            G.applyRemove(match, true);
           }
         } finally {
           G.resetInputState();
@@ -327,7 +357,8 @@
     if (elapsed >= duration) {
       if (G.hexAnimIntervalId != null) clearInterval(G.hexAnimIntervalId);
       G.hexAnimIntervalId = null;
-      G.applyRemove(G.hexAnim.toRemove, false);
+      var toApply = (G.hexAnim.originalMatch && G.hexAnim.originalMatch.length) ? G.hexAnim.originalMatch : G.hexAnim.toRemove;
+      G.applyRemove(toApply, false);
       G.hexAnim = null;
       G.resetInputState();
       G.draw();
@@ -371,6 +402,7 @@
     G.itemsUnlocked = false;
     G.removedThisLevel = 0;
     G.diamondsRemovedThisLevel = 0;
+    G.keysCollectedThisLevel = 0;
     G.comboCount = 0;
     if (G.scoreEl) G.scoreEl.textContent = G.score;
     if (G.levelEl) G.levelEl.textContent = currentLevel;
@@ -416,6 +448,7 @@
     G.itemsUnlocked = false;
     G.removedThisLevel = 0;
     G.diamondsRemovedThisLevel = 0;
+    G.keysCollectedThisLevel = 0;
     G.comboCount = 0;
     if (G.scoreEl) G.scoreEl.textContent = 0;
     if (G.levelEl) G.levelEl.textContent = 1;

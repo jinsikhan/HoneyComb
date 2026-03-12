@@ -18,6 +18,8 @@
     G.timerWrap = document.getElementById('timerWrap');
     G.levelProgressEl = document.getElementById('levelProgress');
     G.diamondsEl = document.getElementById('hexDiamonds');
+    G.keysEl = document.getElementById('hexKeys');
+    G.keysWrap = document.getElementById('keysWrap');
     G.gameOverOverlay = document.getElementById('gameOverOverlay');
     G.gameOverRestartBtn = document.getElementById('gameOverRestartBtn');
 
@@ -46,9 +48,15 @@
       G.totalRemoved = 0;
       G.removedThisLevel = 0;
       G.diamondsRemovedThisLevel = 0;
+      G.keysCollectedThisLevel = 0;
       if (G.levelEl) G.levelEl.textContent = G.level;
       var need = typeof G.getDiamondsToNextLevel === 'function' ? G.getDiamondsToNextLevel(G.level) : 3;
       if (G.diamondsEl) G.diamondsEl.textContent = '0/' + need;
+      if (G.keysEl && typeof G.getKeysRequiredForLevel === 'function') {
+        var kn = G.getKeysRequiredForLevel(G.level);
+        if (kn <= 0 && G.keysWrap) G.keysWrap.style.display = 'none';
+        else if (G.keysWrap && G.keysEl) { G.keysWrap.style.display = ''; G.keysEl.textContent = '0/' + kn; }
+      }
       if (G.timerEl) G.timerEl.textContent = typeof G.getLevelTimeLimit === 'function' ? G.getLevelTimeLimit(G.level) : 30;
       if (G.scoreEl) G.scoreEl.textContent = '0';
       if (G.timerWrap) G.timerWrap.classList.remove('warning', 'danger');
@@ -70,6 +78,11 @@
       if (G.levelEl) G.levelEl.textContent = G.level;
       if (G.timerEl) G.timerEl.textContent = G.getLevelTimeLimit(G.level);
       if (G.diamondsEl) G.diamondsEl.textContent = G.diamondsRemovedThisLevel + '/' + G.getDiamondsToNextLevel(G.level);
+      if (G.keysEl && typeof G.getKeysRequiredForLevel === 'function') {
+        var kn = G.getKeysRequiredForLevel(G.level);
+        if (kn <= 0 && G.keysWrap) G.keysWrap.style.display = 'none';
+        else if (G.keysWrap && G.keysEl) { G.keysWrap.style.display = ''; G.keysEl.textContent = G.keysCollectedThisLevel + '/' + kn; }
+      }
       if (G.timerWrap) G.timerWrap.classList.remove('warning', 'danger');
     }
     G.draw();

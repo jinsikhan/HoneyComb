@@ -19,10 +19,20 @@
     for (var dr = -1; dr <= 1; dr++) {
       for (var dc = -1; dc <= 1; dc++) {
         var rr = rApprox + dr, cc = cApprox + dc;
-        if (rr < 0 || rr >= G.ROWS || cc < 0 || cc >= G.COLS) continue;
+        if (!G.inBounds(rr, cc)) continue;
         var p = G.hexToPixel(rr, cc);
         var d = Math.sqrt((px - p.x) * (px - p.x) + (py - p.y) * (py - p.y));
         if (d <= G.R * 0.95 && d < bestD) { bestD = d; best = { r: rr, c: cc }; }
+      }
+    }
+    if (best) return best;
+    // 클릭이 보드 밖(육각형 빈 모서리)이면 가장 가까운 보드 내 육각 반환
+    for (var r = 0; r < G.ROWS; r++) {
+      for (var c = 0; c < G.COLS; c++) {
+        if (!G.inBounds(r, c)) continue;
+        var p = G.hexToPixel(r, c);
+        var d = Math.sqrt((px - p.x) * (px - p.x) + (py - p.y) * (py - p.y));
+        if (d < bestD) { bestD = d; best = { r: r, c: c }; }
       }
     }
     return best;
@@ -33,18 +43,28 @@
     return false;
   };
 
+  /**
+   * 레벨 70까지 밸런스. 정사각형이 아닌 행×열 조합으로 단계별 확대.
+   * 행/열을 고정 공식이 아니라 (rows, cols) 조합으로 두어 4×5, 6×7 등 다양하게 사용.
+   */
   G.getGridSize = function (lv) {
-    if (lv <= 1) return { rows: 5, cols: 5 };
-    if (lv === 2) return { rows: 5, cols: 5 };
-    if (lv === 3) return { rows: 5, cols: 6 };
-    if (lv === 4) return { rows: 6, cols: 6 };
-    if (lv === 5 || lv === 6) return { rows: 6, cols: 7 };
-    if (lv === 7 || lv === 8) return { rows: 7, cols: 7 };
-    if (lv === 9 || lv === 10) return { rows: 7, cols: 7 };
-    /* 레벨 11 이상: 단계적으로 그리드 확대 (최대 12x12) */
-    var r = 7 + Math.min(5, Math.floor((lv - 10) / 2));
-    var c = 7 + Math.min(5, Math.floor((lv - 9) / 2));
-    return { rows: Math.min(12, r), cols: Math.min(12, c) };
+    var capped = Math.min(Math.max(1, lv), 70);
+    // 레벨 구간별 (rows, cols) — 10구간, 비정사각형 비중 높임
+    var steps = [
+      { rows: 4, cols: 4 },   // 1–7
+      { rows: 4, cols: 5 },   // 8–14
+      { rows: 5, cols: 6 },   // 15–21
+      { rows: 6, cols: 6 },   // 22–28
+      { rows: 6, cols: 7 },   // 29–35
+      { rows: 7, cols: 8 },   // 36–42
+      { rows: 8, cols: 8 },   // 43–49
+      { rows: 8, cols: 9 },   // 50–56
+      { rows: 9, cols: 10 },  // 57–63
+      { rows: 10, cols: 11 }  // 64–70
+    ];
+    var step = Math.min(steps.length - 1, Math.floor((capped - 1) / 7));
+    var sz = steps[step];
+    return { rows: sz.rows, cols: sz.cols };
   };
   G.applyGridSize = function () {
     var R_BASE = 28, GAP_BASE = 5;
@@ -56,6 +76,8 @@
     }
     G.ROWS = sz.rows;
     G.COLS = sz.cols;
+    /** 육각형 실루엣: 중심에서 이 거리 이내의 육각만 보드에 둠 (직사각형 아님) */
+    G.hexRadius = Math.min(Math.floor(G.ROWS / 2), Math.floor(G.COLS / 2));
     G.R = R_BASE;
     G.GAP = GAP_BASE;
     G.STEP_X = Math.sqrt(3) * G.R + G.GAP;
@@ -83,14 +105,39 @@
   G.getDiamondsToNextLevel = function (lv) {
     return Math.max(3, Math.round(3 + lv * 0.95));
   };
+  /** 레벨업에 필요한 열쇠 개수. 난이도 올라가면 2개 이상 필요 */
+  G.getKeysRequiredForLevel = function (lv) {
+    if (lv <= 19) return 0;
+    if (lv <= 39) return 2;
+    if (lv <= 59) return 3;
+    return 4;
+  };
   G.maxDiamondsOnGrid = function () {
     // 다이아가 "안 보이는" 체감을 줄이기 위해 9레벨 이후 상한을 더 빠르게 증가시킴
     // lv1~4: 4, lv5~8: 5, lv9~12: 6, lv13~16: 7 ... (상한 16)
     return Math.min(16, 4 + Math.floor(Math.max(0, G.level + 3) / 4));
   };
+  G.maxKeysOnGrid = function () {
+    var need = G.getKeysRequiredForLevel(G.level);
+    return need <= 0 ? 0 : Math.min(need + 2, 5);
+  };
+  function keyChanceForLevel(lv) {
+    if (G.getKeysRequiredForLevel(lv) <= 0) return 0;
+    return Math.min(0.22, 0.08 + lv * 0.002);
+  }
+  /** 레벨에 따른 보드 중간 빈 슬롯(구멍) 개수. 난이도 상승 시 빈 자리 증가 */
+  G.getHoleCountForLevel = function (lv) {
+    if (lv <= 14) return 0;
+    if (lv <= 24) return 1;
+    if (lv <= 34) return 2;
+    if (lv <= 44) return 3;
+    if (lv <= 54) return 4;
+    return 5;
+  };
   function diamondChanceForLevel(lv) {
     return Math.min(0.48, 0.26 + lv * 0.0075);
   }
+  G.isHole = function (r, c) { return G.holes && G.holes[r + ',' + c]; };
   G.countDiamondsOnGrid = function () {
     var n = 0;
     for (var r = 0; r < G.ROWS; r++)
@@ -112,8 +159,29 @@
       }
     return n;
   };
+  G.countKeysOnGrid = function () {
+    var n = 0;
+    for (var r = 0; r < G.ROWS; r++)
+      for (var c = 0; c < G.COLS; c++) {
+        var cell = G.get(r, c);
+        if (cell && cell.key) n++;
+      }
+    return n;
+  };
+  G.countKeysExcluding = function (excludeList) {
+    var set = {};
+    for (var i = 0; i < excludeList.length; i++) set[excludeList[i].r + ',' + excludeList[i].c] = true;
+    var n = 0;
+    for (var r = 0; r < G.ROWS; r++)
+      for (var c = 0; c < G.COLS; c++) {
+        if (set[r + ',' + c]) continue;
+        var cell = G.get(r, c);
+        if (cell && cell.key) n++;
+      }
+    return n;
+  };
 
-  G.randCell = function (r, c, allowDiamond) {
+  G.randCell = function (r, c, allowDiamond, allowKey) {
     var colors = G.getColorsForLevel(G.level);
     var allowItem = G.itemsUnlocked && G.totalRemoved >= getItemThreshold();
     var itemMult = 1 / (1 + (G.level - 1) * 0.28);
@@ -143,7 +211,8 @@
     }
     var isDiamond = false;
     if (allowDiamond && !isBomb && !isMissile && !isCross && Math.random() < diamondChanceForLevel(G.level)) isDiamond = true;
-    return { color: colors[colorIdx], bomb: isBomb, missile: isMissile, cross: isCross, diamond: isDiamond };
+    var isKey = !isDiamond && allowKey && !isBomb && !isMissile && !isCross && Math.random() < keyChanceForLevel(G.level);
+    return { color: colors[colorIdx], bomb: isBomb, missile: isMissile, cross: isCross, diamond: isDiamond, key: isKey };
   };
 
   G.countGroupIfSet = function (r, c, color) {
@@ -165,7 +234,7 @@
     return count;
   };
 
-  G.randCellNoMatch = function (r, c, allowDiamond, allowChainMatch) {
+  G.randCellNoMatch = function (r, c, allowDiamond, allowChainMatch, allowKey) {
     var colors = G.getColorsForLevel(G.level);
     var safe = [];
     for (var k = 0; k < colors.length; k++) {
@@ -185,7 +254,9 @@
     var isCross = allowItem && !isBomb && !isMissile && Math.random() < G.CROSS_CHANCE * itemMult;
     var isDiamond = false;
     if (allowDiamond && !isBomb && !isMissile && !isCross && Math.random() < diamondChanceForLevel(G.level)) isDiamond = true;
-    return { color: color, bomb: isBomb, missile: isMissile, cross: isCross, diamond: isDiamond };
+    var allowKeyVal = allowKey !== undefined ? allowKey : (G.getKeysRequiredForLevel(G.level) > 0);
+    var isKey = !isDiamond && allowKeyVal && !isBomb && !isMissile && !isCross && Math.random() < keyChanceForLevel(G.level);
+    return { color: color, bomb: isBomb, missile: isMissile, cross: isCross, diamond: isDiamond, key: isKey };
   };
 
   G.findGroup = function (r, c) {
@@ -210,6 +281,7 @@
 
   G.collectToRemove = function (group) {
     var toRemove = [];
+    var toDowngrade = []; // 열쇠 블럭: 여기 넣으면 제거되지 않고 열쇠만 사라짐(두 번 깨야 없어짐)
     var hasBomb = false, hasMissile = false, hasCross = false;
     var bombPositions = [], missilePos = null, crossPos = null;
     for (var i = 0; i < group.length; i++) {
@@ -218,7 +290,11 @@
       if (cell && cell.bomb) { hasBomb = true; bombPositions.push({ r: g.r, c: g.c }); }
       if (cell && cell.missile) { hasMissile = true; missilePos = { r: g.r, c: g.c }; }
       if (cell && cell.cross) { hasCross = true; crossPos = { r: g.r, c: g.c }; }
-      toRemove.push({ r: g.r, c: g.c });
+      if (cell && cell.key) {
+        toDowngrade.push({ r: g.r, c: g.c });
+      } else {
+        toRemove.push({ r: g.r, c: g.c });
+      }
     }
     if (hasBomb && bombPositions.length > 0) {
       var processed = {};
@@ -246,16 +322,19 @@
       var cell = G.get(t.r, t.c);
       if (cell && cell.missile) {
         for (var cc = 0; cc < G.COLS; cc++) {
+          if (!G.inBounds(t.r, cc)) continue;
           var k = t.r + ',' + cc;
           if (!seen[k]) { seen[k] = true; toRemove.push({ r: t.r, c: cc }); }
         }
       }
       if (cell && cell.cross) {
         for (var cc = 0; cc < G.COLS; cc++) {
+          if (!G.inBounds(t.r, cc)) continue;
           var k = t.r + ',' + cc;
           if (!seen[k]) { seen[k] = true; toRemove.push({ r: t.r, c: cc }); }
         }
         for (var rr = 0; rr < G.ROWS; rr++) {
+          if (!G.inBounds(rr, t.c)) continue;
           var k = rr + ',' + t.c;
           if (!seen[k]) { seen[k] = true; toRemove.push({ r: rr, c: t.c }); }
         }
@@ -263,18 +342,21 @@
     }
     if (hasMissile && missilePos) {
       for (var cc = 0; cc < G.COLS; cc++) {
+        if (!G.inBounds(missilePos.r, cc)) continue;
         if (!toRemove.some(function (t) { return t.r === missilePos.r && t.c === cc; })) toRemove.push({ r: missilePos.r, c: cc });
       }
     }
     if (hasCross && crossPos) {
       for (var cc = 0; cc < G.COLS; cc++) {
+        if (!G.inBounds(crossPos.r, cc)) continue;
         if (!toRemove.some(function (t) { return t.r === crossPos.r && t.c === cc; })) toRemove.push({ r: crossPos.r, c: cc });
       }
       for (var rr = 0; rr < G.ROWS; rr++) {
+        if (!G.inBounds(rr, crossPos.c)) continue;
         if (!toRemove.some(function (t) { return t.r === rr && t.c === crossPos.c; })) toRemove.push({ r: rr, c: crossPos.c });
       }
     }
-    return { toRemove: toRemove, bombPositions: bombPositions, missilePos: missilePos, crossPos: crossPos };
+    return { toRemove: toRemove, toDowngrade: toDowngrade, bombPositions: bombPositions, missilePos: missilePos, crossPos: crossPos };
   };
 
   G.findAnyMatch = function () {
@@ -364,11 +446,15 @@
       list.push(t);
     }
     var diamondCount = G.countDiamondsExcluding(list);
+    var keyCount = G.countKeysExcluding(list);
     for (var i = 0; i < list.length; i++) {
       var t = list[i];
       var allowDiamond = diamondCount < G.maxDiamondsOnGrid();
-      G.set(t.r, t.c, G.randCellNoMatch(t.r, t.c, allowDiamond, !!allowChainMatch));
+      var needKeys = G.getKeysRequiredForLevel(G.level) > 0;
+      var allowKey = needKeys && keyCount < G.maxKeysOnGrid();
+      G.set(t.r, t.c, G.randCellNoMatch(t.r, t.c, allowDiamond, !!allowChainMatch, allowKey));
       if (G.get(t.r, t.c).diamond) diamondCount++;
+      if (G.get(t.r, t.c).key) keyCount++;
     }
     G.totalRemoved += list.length;
     ensureMinimumDiamonds();
@@ -376,15 +462,40 @@
   };
 
   G.initGrid = function () {
+    var n = G.ROWS * G.COLS;
     G.grid = [];
+    for (var i = 0; i < n; i++) G.grid[i] = null;
+    G.holes = {};
+
+    // 보드 내부(육각형) 중 빈 슬롯(구멍): 레벨이 올라갈수록 일부 자리를 비움
+    var allInBounds = [];
+    for (var r = 0; r < G.ROWS; r++)
+      for (var c = 0; c < G.COLS; c++)
+        if (G.inBounds(r, c)) allInBounds.push({ r: r, c: c });
+    var holeCount = Math.min(G.getHoleCountForLevel(G.level), Math.max(0, allInBounds.length - 5));
+    for (var h = 0; h < holeCount; h++) {
+      var idx = Math.floor(Math.random() * allInBounds.length);
+      var p = allInBounds[idx];
+      G.holes[p.r + ',' + p.c] = true;
+      allInBounds.splice(idx, 1);
+    }
+    var positions = allInBounds;
+
+    for (var i = positions.length - 1; i > 0; i--) {
+      var j = Math.floor(Math.random() * (i + 1));
+      var t = positions[i]; positions[i] = positions[j]; positions[j] = t;
+    }
     var diamondCount = 0;
-    for (var r = 0; r < G.ROWS; r++) {
-      for (var c = 0; c < G.COLS; c++) {
-        var allowDiamond = diamondCount < G.maxDiamondsOnGrid();
-        var cell = G.randCell(r, c, allowDiamond);
-        if (cell.diamond) diamondCount++;
-        G.grid.push(cell);
-      }
+    var keyCount = 0;
+    for (var idx = 0; idx < positions.length; idx++) {
+      var p = positions[idx];
+      var allowDiamond = diamondCount < G.maxDiamondsOnGrid();
+      var needKeys = G.getKeysRequiredForLevel(G.level) > 0;
+      var allowKey = needKeys && keyCount < G.maxKeysOnGrid();
+      var cell = G.randCell(p.r, p.c, allowDiamond, allowKey);
+      if (cell.diamond) diamondCount++;
+      if (cell.key) keyCount++;
+      G.set(p.r, p.c, cell);
     }
     G.resolveInitialMatches();
     ensureMinimumDiamonds();
@@ -408,7 +519,7 @@
       for (var j = 0; j < list.length; j++) {
         var t = list[j];
         var allowDiamond = diamondCount < G.maxDiamondsOnGrid();
-        var cell = G.randCell(t.r, t.c, allowDiamond);
+        var cell = G.randCell(t.r, t.c, allowDiamond, G.getKeysRequiredForLevel(G.level) > 0 && G.countKeysOnGrid() < G.maxKeysOnGrid());
         if (cell.diamond) diamondCount++;
         G.set(t.r, t.c, cell);
       }

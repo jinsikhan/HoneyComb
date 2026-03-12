@@ -67,7 +67,7 @@
     }
   };
 
-  G.drawHex = function (x, y, color, isBomb, isMissile, isCross, isDiamond, isSelected) {
+  G.drawHex = function (x, y, color, isBomb, isMissile, isCross, isDiamond, isKey, isSelected) {
     var ctx = G.ctx, R = G.R;
     ctx.beginPath();
     for (var i = 0; i < 6; i++) {
@@ -156,6 +156,25 @@
       ctx.lineTo(0, iconR);
       ctx.lineTo(-iconR * 0.85, 0);
       ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+      ctx.restore();
+    } else if (isKey) {
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.fillStyle = '#fbbf24';
+      ctx.strokeStyle = '#d97706';
+      ctx.lineWidth = 1.2;
+      ctx.beginPath();
+      ctx.arc(0, -iconR * 0.3, iconR * 0.35, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.rect(-iconR * 0.2, -iconR * 0.3, iconR * 0.4, iconR * 0.85);
+      ctx.fill();
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.arc(0, iconR * 0.55, iconR * 0.4, 0, Math.PI * 2);
       ctx.fill();
       ctx.stroke();
       ctx.restore();
@@ -272,6 +291,24 @@
     for (var r = 0; r < G.ROWS; r++) {
       for (var c = 0; c < G.COLS; c++) {
         if (sa && ((r === sa.r1 && c === sa.c1) || (r === sa.r2 && c === sa.c2))) continue;
+        if (G.isHole && G.isHole(r, c)) {
+          var p = G.hexToPixel(r, c);
+          ctx.save();
+          ctx.strokeStyle = 'rgba(80,80,90,0.5)';
+          ctx.lineWidth = 1.5;
+          ctx.setLineDash([4, 3]);
+          ctx.beginPath();
+          for (var hi = 0; hi < 6; hi++) {
+            var ha = Math.PI / 2 + (Math.PI / 3) * hi;
+            var hx = p.x + G.R * Math.cos(ha), hy = p.y + G.R * Math.sin(ha);
+            if (hi === 0) ctx.moveTo(hx, hy); else ctx.lineTo(hx, hy);
+          }
+          ctx.closePath();
+          ctx.stroke();
+          ctx.setLineDash([]);
+          ctx.restore();
+          continue;
+        }
         var cell = G.get(r, c);
         if (!cell) continue;
         var p = G.hexToPixel(r, c);
@@ -287,7 +324,7 @@
           ctx.translate(p.x, p.y);
           ctx.scale(scale, scale);
           ctx.translate(-p.x, -p.y);
-          G.drawHex(p.x, p.y, cell.color, cell.bomb, cell.missile, cell.cross, cell.diamond, false);
+          G.drawHex(p.x, p.y, cell.color, cell.bomb, cell.missile, cell.cross, cell.diamond, cell.key, false);
           ctx.restore();
         } else if (refillSet && refillSet[r + ',' + c]) {
           var t = Math.min(1, (now - G.refillAnim.start) / G.refillAnim.duration);
@@ -299,10 +336,10 @@
           ctx.translate(p.x, p.y);
           ctx.scale(scaleZ, scaleZ);
           ctx.translate(-p.x, -p.y);
-          G.drawHex(p.x, p.y, cell.color, cell.bomb, cell.missile, cell.cross, cell.diamond, isSel || isSwap);
+          G.drawHex(p.x, p.y, cell.color, cell.bomb, cell.missile, cell.cross, cell.diamond, cell.key, isSel || isSwap);
           ctx.restore();
         } else {
-          G.drawHex(p.x, p.y, cell.color, cell.bomb, cell.missile, cell.cross, cell.diamond, isSel || isSwap);
+          G.drawHex(p.x, p.y, cell.color, cell.bomb, cell.missile, cell.cross, cell.diamond, cell.key, isSel || isSwap);
         }
       }
     }
@@ -312,8 +349,8 @@
       var p1 = G.hexToPixel(sa.r1, sa.c1), p2 = G.hexToPixel(sa.r2, sa.c2);
       var x1 = p1.x + (p2.x - p1.x) * t, y1 = p1.y + (p2.y - p1.y) * t;
       var x2 = p2.x + (p1.x - p2.x) * t, y2 = p2.y + (p1.y - p2.y) * t;
-      G.drawHex(x1, y1, sa.cellA.color, sa.cellA.bomb, sa.cellA.missile, sa.cellA.cross, sa.cellA.diamond, false);
-      G.drawHex(x2, y2, sa.cellB.color, sa.cellB.bomb, sa.cellB.missile, sa.cellB.cross, sa.cellB.diamond, false);
+      G.drawHex(x1, y1, sa.cellA.color, sa.cellA.bomb, sa.cellA.missile, sa.cellA.cross, sa.cellA.diamond, sa.cellA.key, false);
+      G.drawHex(x2, y2, sa.cellB.color, sa.cellB.bomb, sa.cellB.missile, sa.cellB.cross, sa.cellB.diamond, sa.cellB.key, false);
     }
     ctx.restore();
     G.updateBurstParticles(now);

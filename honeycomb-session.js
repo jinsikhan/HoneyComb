@@ -37,10 +37,12 @@
         totalRemoved: G.totalRemoved,
         removedThisLevel: G.removedThisLevel,
         diamondsRemovedThisLevel: G.diamondsRemovedThisLevel,
+        keysCollectedThisLevel: G.keysCollectedThisLevel,
         itemsUnlocked: !!G.itemsUnlocked,
         rows: G.ROWS,
         cols: G.COLS,
         grid: G.grid,
+        holes: G.holes,
         timeLeftSec: timeLeft,
         // 오버레이/애니메이션/입력 상태는 복구하지 않음(복구 시 깨끗한 상태로 시작)
       };
@@ -70,7 +72,9 @@
       G.totalRemoved = data.totalRemoved || 0;
       G.removedThisLevel = data.removedThisLevel || 0;
       G.diamondsRemovedThisLevel = data.diamondsRemovedThisLevel || 0;
+      G.keysCollectedThisLevel = data.keysCollectedThisLevel || 0;
       G.itemsUnlocked = !!data.itemsUnlocked;
+      G.holes = data.holes && typeof data.holes === 'object' ? data.holes : {};
 
       // 레벨 기반으로 그리드 스케일/오프셋 재계산 후 그리드 적용
       G.applyGridSize();
