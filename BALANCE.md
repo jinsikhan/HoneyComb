@@ -21,7 +21,7 @@
 
 | 항목 | 파일 | 함수/상수 | 설명 |
 |------|------|-----------|------|
-| 레벨별 행/열 | honeycomb-grid.js | `getGridSize(lv)` | **레벨 70까지** 밸런스. (rows, cols) 조합 테이블로 **약 5레벨마다** 한 단계 확대(14단계). 4×4 → 4×5 → 5×5 → 5×6 → 6×6 → 6×7 → 7×7 → 7×8 → 8×8 → 8×9 → 9×9 → 9×10 → 10×10 → 10×11. 71+는 70과 동일. |
+| 레벨별 행/열 | honeycomb-grid.js | `getGridSize(lv)` | **레벨 70까지** 밸런스. (rows, cols) 조합 테이블로 **약 5레벨마다** 한 단계 확대(14단계). 4×5 → 5×5 → 5×6 → 6×6 → 6×7 → 7×7 → 7×8 → 8×8 → 8×9 → 9×9 → 9×10 → 10×10 → 10×11 → 11×11. 71+는 70과 동일. |
 | 모바일 캡 | honeycomb-grid.js | `applyGridSize()` 내 `maxRC` | CANVAS_WIDTH < 380 → 최대 9×9 |
 | 보드 모양 | honeycomb-state.js / honeycomb-grid.js | `inBounds(r,c)`, `hexRadius` | **육각형 실루엣**: 직사각형이 아닌 중심 거리(hex radius) 이내만 유효. `hexRadius = min(floor(ROWS/2), floor(COLS/2))` |
 | 보드 구멍 | honeycomb-grid.js | `getHoleCountForLevel(lv)`, `G.holes` | 레벨 15~24: 1개, 25~34: 2개 … 55+: 5개. 중간 빈 슬롯으로 난이도 상승 |

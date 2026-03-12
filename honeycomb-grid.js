@@ -51,20 +51,20 @@
     var capped = Math.min(Math.max(1, lv), 70);
     // 레벨 구간별 (rows, cols) — 14단계, 5레벨마다 한 단계로 완만히 확대
     var steps = [
-      { rows: 4, cols: 4 },   // 1–5
-      { rows: 4, cols: 5 },   // 6–10
-      { rows: 5, cols: 5 },   // 11–15
-      { rows: 5, cols: 6 },   // 16–20
-      { rows: 6, cols: 6 },   // 21–25
-      { rows: 6, cols: 7 },   // 26–30
-      { rows: 7, cols: 7 },   // 31–35
-      { rows: 7, cols: 8 },   // 36–40
-      { rows: 8, cols: 8 },   // 41–45
-      { rows: 8, cols: 9 },   // 46–50
-      { rows: 9, cols: 9 },   // 51–55
-      { rows: 9, cols: 10 },  // 56–60
-      { rows: 10, cols: 10 }, // 61–65
-      { rows: 10, cols: 11 }  // 66–70
+      { rows: 4, cols: 5 },   // 1–5
+      { rows: 5, cols: 5 },   // 6–10
+      { rows: 5, cols: 6 },   // 11–15
+      { rows: 6, cols: 6 },   // 16–20
+      { rows: 6, cols: 7 },   // 21–25
+      { rows: 7, cols: 7 },   // 26–30
+      { rows: 7, cols: 8 },   // 31–35
+      { rows: 8, cols: 8 },   // 36–40
+      { rows: 8, cols: 9 },   // 41–45
+      { rows: 9, cols: 9 },   // 46–50
+      { rows: 9, cols: 10 },  // 51–55
+      { rows: 10, cols: 10 }, // 56–60
+      { rows: 10, cols: 11 }, // 61–65
+      { rows: 11, cols: 11 }  // 66–70
     ];
     var step = Math.min(steps.length - 1, Math.floor((capped - 1) / 5));
     var sz = steps[step];

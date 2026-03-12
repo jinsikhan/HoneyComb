@@ -371,11 +371,21 @@
     if (elapsed >= duration) {
       if (G.hexAnimIntervalId != null) clearInterval(G.hexAnimIntervalId);
       G.hexAnimIntervalId = null;
-      var toApply = (G.hexAnim.originalMatch && G.hexAnim.originalMatch.length) ? G.hexAnim.originalMatch : G.hexAnim.toRemove;
-      G.applyRemove(toApply, false);
+      var toApply = (G.hexAnim.toRemove && G.hexAnim.toRemove.length) ? G.hexAnim.toRemove : (G.hexAnim.originalMatch || []);
       G.hexAnim = null;
-      G.resetInputState();
-      G.draw();
+      try {
+        if (toApply.length > 0) G.applyRemove(toApply, false);
+        else G.draw();
+      } catch (err) {
+        G.chainInProgress = false;
+        if (G.chainStepTimerId != null) clearTimeout(G.chainStepTimerId);
+        G.chainStepTimerId = null;
+        G.refillAnim = null;
+        G.removeAnim = null;
+        G.resetInputState();
+        if (typeof G.draw === 'function') G.draw();
+        if (typeof G.saveSession === 'function') G.saveSession(true);
+      }
     }
   };
 
