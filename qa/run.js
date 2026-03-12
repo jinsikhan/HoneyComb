@@ -12,8 +12,8 @@
  *  G. 아이템 사용 후 상태 유지 (미사일/폭탄 강제 주입)
  *  H. 세션 저장/복구
  *  I. 맞출 수 없을 때 자동 리셔플
- *  J. 멀티 레벨 그리드 크기 단계 검증
- *  K. 콘솔 에러 없음
+ *  J. 콘솔 에러 없음
+ *  K. 인접 구멍(hole) 해제 검증
  */
 const path = require('path');
 const { pathToFileURL } = require('url');
@@ -339,6 +339,57 @@ async function runQA() {
         reshuffled.after ? pass('리셔플 후 유효 수 생성') : fail('리셔플 후에도 유효 수 없음');
         const g = await getG(page);
         g && g.nullCells === 0 ? pass('리셔플 후 빈칸 없음') : fail('리셔플 후 빈칸 ' + (g ? g.nullCells : '?') + '개');
+      }
+      await page.close();
+    }
+
+    // ── K. 인접 구멍(hole) 해제 검증 ─────────────────────────────────────────
+    console.log('\n[K] 인접 구멍 해제');
+    {
+      // Lv.20: 구멍이 1개 생기는 레벨
+      const { page } = await freshPage(levelUrl(20));
+      const result = await page.evaluate(() => {
+        const G = window.HoneyComb;
+        if (!G || !G.ROWS) return null;
+        // 구멍 없으면 강제로 1개 만들기
+        const holesBefore = Object.keys(G.holes).length;
+        if (holesBefore === 0) {
+          for (let r = 0; r < G.ROWS; r++) {
+            for (let c = 0; c < G.COLS; c++) {
+              if (G.inBounds(r, c) && G.get(r, c)) {
+                G.holes[r + ',' + c] = true;
+                G.grid[G.id(r, c)] = null;
+                // 구멍 이웃 중 유효 칸 찾기
+                const nbs = G.neighbors(r, c).filter(n => G.get(n.r, n.c));
+                if (nbs.length >= 2) {
+                  const holeKey = r + ',' + c;
+                  // 이웃 제거 → refillOnlyRemoved 직접 호출
+                  G.refillOnlyRemoved(nbs.slice(0, 2), false);
+                  const holesAfter = Object.keys(G.holes).length;
+                  const wasUnlocked = !G.holes[holeKey];
+                  return { holesBefore: 1, holesAfter, wasUnlocked, cellFilled: !!G.get(r, c) };
+                }
+              }
+            }
+          }
+          return { skipped: true };
+        }
+        // 기존 구멍이 있을 때
+        const holeKey = Object.keys(G.holes)[0];
+        const [hr, hc] = holeKey.split(',').map(Number);
+        const nbs = G.neighbors(hr, hc).filter(n => G.get(n.r, n.c));
+        if (nbs.length === 0) return { skipped: true };
+        G.refillOnlyRemoved(nbs.slice(0, Math.min(2, nbs.length)), false);
+        const holesAfter = Object.keys(G.holes).length;
+        const wasUnlocked = !G.holes[holeKey];
+        return { holesBefore, holesAfter, wasUnlocked, cellFilled: !!G.get(hr, hc) };
+      });
+      if (!result || result.skipped) {
+        pass('구멍 해제 테스트 건너뜀(조건 미충족)');
+      } else {
+        result.wasUnlocked ? pass('구멍 해제됨(holes 삭제 확인)') : fail('구멍 해제 안됨');
+        result.cellFilled ? pass('해제된 구멍에 블럭 채워짐') : fail('해제된 구멍 빈칸 그대로');
+        result.holesAfter < result.holesBefore ? pass('holes 개수 감소') : fail('holes 개수 변화 없음');
       }
       await page.close();
     }

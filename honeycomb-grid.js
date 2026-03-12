@@ -566,6 +566,22 @@
       if (!G.get(t.r, t.c)) continue;
       list.push(t);
     }
+
+    // 제거된 블럭에 인접한 구멍이 있으면 구멍을 해제하고 리필 목록에 추가
+    var holeSeen = {};
+    for (var i = 0; i < toRemove.length; i++) {
+      var t = toRemove[i];
+      var nbs = G.neighbors(t.r, t.c);
+      for (var j = 0; j < nbs.length; j++) {
+        var n = nbs[j];
+        var hk = n.r + ',' + n.c;
+        if (G.holes[hk] && !holeSeen[hk]) {
+          holeSeen[hk] = true;
+          delete G.holes[hk];
+          list.push({ r: n.r, c: n.c });
+        }
+      }
+    }
     var diamondCount = G.countDiamondsExcluding(list);
     var keyCount = G.countKeysExcluding(list);
     for (var i = 0; i < list.length; i++) {
