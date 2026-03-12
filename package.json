@@ -1,0 +1,10 @@
+{
+  "name": "honeycomb",
+  "private": true,
+  "scripts": {
+    "qa": "node qa/run.js"
+  },
+  "devDependencies": {
+    "playwright": "^1.49.0"
+  }
+}

@@ -423,46 +423,40 @@
     }
   }
 
-  /** 인접한 한 쌍을 스왑하면 3매치가 나오도록 2~3칸 색을 강제. (셔플만으로 안 나올 때 최후 수단) */
+  /** 인접한 한 셀과 그 인접 두 칸을 같은 색으로 만들어 확실히 3매치 생성 (육각·구멍 대응) */
   function forceValidMove() {
     var colors = G.getColorsForLevel(G.level);
-    if (colors.length < 2) return;
-    var C = colors[0], D = colors[1];
-    var pairs = [];
+    if (colors.length < 1) return;
+    var C = colors[0];
+    var candidates = [];
     for (var r = 0; r < G.ROWS; r++) {
       for (var c = 0; c < G.COLS; c++) {
         if (!G.inBounds(r, c) || G.holes[r + ',' + c]) continue;
         if (!G.get(r, c)) continue;
         var nb = G.neighbors(r, c);
+        if (nb.length < 2) continue;
         for (var i = 0; i < nb.length; i++) {
-          var r2 = nb[i].r, c2 = nb[i].c;
-          if (!G.inBounds(r2, c2) || G.holes[r2 + ',' + c2]) continue;
-          if (!G.get(r2, c2)) continue;
-          var key = r + ',' + c + '-' + r2 + ',' + c2;
-          var key2 = r2 + ',' + c2 + '-' + r + ',' + c;
-          if (key < key2) pairs.push({ r1: r, c1: c, r2: r2, c2: c2 });
+          var n1 = nb[i];
+          if (!G.inBounds(n1.r, n1.c) || G.holes[n1.r + ',' + n1.c]) continue;
+          if (!G.get(n1.r, n1.c)) continue;
+          for (var j = i + 1; j < nb.length; j++) {
+            var n2 = nb[j];
+            if (!G.inBounds(n2.r, n2.c) || G.holes[n2.r + ',' + n2.c]) continue;
+            if (!G.get(n2.r, n2.c)) continue;
+            candidates.push({ r: r, c: c, n1: n1, n2: n2 });
+          }
         }
       }
     }
-    if (pairs.length === 0) return;
-    var p = pairs[Math.floor(Math.random() * pairs.length)];
-    var cell1 = G.get(p.r1, p.c1);
-    var cell2 = G.get(p.r2, p.c2);
-    if (!cell1 || !cell2) return;
-    var base = { bomb: false, missile: false, cross: false, diamond: cell1.diamond, key: cell1.key };
-    G.set(p.r1, p.c1, { color: C, bomb: false, missile: false, cross: false, diamond: cell1.diamond, key: cell1.key });
-    G.set(p.r2, p.c2, { color: D, bomb: false, missile: false, cross: false, diamond: cell2.diamond, key: cell2.key });
-    var nb2 = G.neighbors(p.r2, p.c2);
-    var count = 0;
-    for (var j = 0; j < nb2.length && count < 2; j++) {
-      var r0 = nb2[j].r, c0 = nb2[j].c;
-      if (r0 === p.r1 && c0 === p.c1) continue;
-      if (!G.inBounds(r0, c0) || G.holes[r0 + ',' + c0]) continue;
-      var c0cell = G.get(r0, c0);
-      if (!c0cell) continue;
-      G.set(r0, c0, { color: C, bomb: c0cell.bomb, missile: c0cell.missile, cross: c0cell.cross, diamond: c0cell.diamond, key: c0cell.key });
-      count++;
-    }
+    if (candidates.length === 0) return;
+    var pick = candidates[Math.floor(Math.random() * candidates.length)];
+    var cell0 = G.get(pick.r, pick.c);
+    var cell1 = G.get(pick.n1.r, pick.n1.c);
+    var cell2 = G.get(pick.n2.r, pick.n2.c);
+    if (!cell0 || !cell1 || !cell2) return;
+    G.set(pick.r, pick.c, { color: C, bomb: false, missile: false, cross: false, diamond: cell0.diamond, key: cell0.key });
+    G.set(pick.n1.r, pick.n1.c, { color: C, bomb: false, missile: false, cross: false, diamond: cell1.diamond, key: cell1.key });
+    G.set(pick.n2.r, pick.n2.c, { color: C, bomb: false, missile: false, cross: false, diamond: cell2.diamond, key: cell2.key });
   }
 
   /** 리필 후 움직일 수 없을 때 한 번 보드를 다시 채워 유효 수가 나오게 함 */
@@ -569,6 +563,15 @@
     }
     G.totalRemoved += list.length;
     ensureMinimumDiamonds();
+    if (!G.hasValidMove()) {
+      var limit = 30;
+      while (!G.hasValidMove() && limit-- > 0) {
+        refillAllCells();
+        G.resolveInitialMatches();
+        ensureMinimumDiamonds();
+      }
+      if (!G.hasValidMove()) forceValidMove();
+    }
     return list.length;
   };
 
