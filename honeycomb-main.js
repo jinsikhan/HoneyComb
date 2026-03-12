@@ -30,8 +30,11 @@
     canvas.height = G.CANVAS_HEIGHT;
 
     // QA: URL에 ?level=N 이 있으면 해당 레벨로 시작 (세션 무시, 1~100)
+    // search가 비어도 href에서 파라미터 읽기 (GitHub Pages 등 일부 호스트 대응)
     var qaLevel = null;
-    var match = /[?&]level=(\d+)/.exec(window.location.search || '');
+    var search = window.location.search || '';
+    if (!search && window.location.href) search = '?' + (window.location.href.split('?')[1] || '');
+    var match = /[?&]level=(\d+)/.exec(search);
     if (match) {
       var n = parseInt(match[1], 10);
       if (n >= 1 && n <= 100) qaLevel = n;
@@ -43,6 +46,12 @@
       G.totalRemoved = 0;
       G.removedThisLevel = 0;
       G.diamondsRemovedThisLevel = 0;
+      if (G.levelEl) G.levelEl.textContent = G.level;
+      var need = typeof G.getDiamondsToNextLevel === 'function' ? G.getDiamondsToNextLevel(G.level) : 3;
+      if (G.diamondsEl) G.diamondsEl.textContent = '0/' + need;
+      if (G.timerEl) G.timerEl.textContent = typeof G.getLevelTimeLimit === 'function' ? G.getLevelTimeLimit(G.level) : 30;
+      if (G.scoreEl) G.scoreEl.textContent = '0';
+      if (G.timerWrap) G.timerWrap.classList.remove('warning', 'danger');
     }
 
     // 세션 복구(가능하면 이어하기), QA 레벨이 없을 때만
@@ -60,6 +69,7 @@
     if (qaLevel != null) {
       if (G.levelEl) G.levelEl.textContent = G.level;
       if (G.timerEl) G.timerEl.textContent = G.getLevelTimeLimit(G.level);
+      if (G.diamondsEl) G.diamondsEl.textContent = G.diamondsRemovedThisLevel + '/' + G.getDiamondsToNextLevel(G.level);
       if (G.timerWrap) G.timerWrap.classList.remove('warning', 'danger');
     }
     G.draw();
