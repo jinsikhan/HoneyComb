@@ -76,8 +76,8 @@
       G.itemsUnlocked = !!data.itemsUnlocked;
       G.holes = data.holes && typeof data.holes === 'object' ? data.holes : {};
 
-      // 레벨 기반으로 그리드 스케일/오프셋 재계산 후 그리드 적용
-      G.applyGridSize();
+      // 레벨 기반 그리드 스케일/오프셋은 저장된 행·열로 맞춤 (다른 기기/캔버스에서 저장 시 그리드 크기 유지)
+      G.applyGridSize(data.rows, data.cols);
       G.grid = data.grid;
 
       // UI 반영

@@ -66,13 +66,18 @@
     var sz = steps[step];
     return { rows: sz.rows, cols: sz.cols };
   };
-  G.applyGridSize = function () {
+  G.applyGridSize = function (overrideRows, overrideCols) {
     var R_BASE = 28, GAP_BASE = 5;
-    var sz = G.getGridSize(G.level);
-    // 모바일 등 작은 캔버스에서는 그리드 최대 크기 제한 → 블럭이 너무 작아지지 않도록
-    var maxRC = (G.CANVAS_WIDTH >= 380) ? 12 : 9;
-    if (sz.rows > maxRC || sz.cols > maxRC) {
-      sz = { rows: Math.min(maxRC, sz.rows), cols: Math.min(maxRC, sz.cols) };
+    var sz;
+    if (overrideRows != null && overrideCols != null) {
+      sz = { rows: overrideRows, cols: overrideCols };
+    } else {
+      sz = G.getGridSize(G.level);
+      // 모바일 등 작은 캔버스에서는 그리드 최대 크기 제한 → 블럭이 너무 작아지지 않도록
+      var maxRC = (G.CANVAS_WIDTH >= 380) ? 12 : 9;
+      if (sz.rows > maxRC || sz.cols > maxRC) {
+        sz = { rows: Math.min(maxRC, sz.rows), cols: Math.min(maxRC, sz.cols) };
+      }
     }
     G.ROWS = sz.rows;
     G.COLS = sz.cols;

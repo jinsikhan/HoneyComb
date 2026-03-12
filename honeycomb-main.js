@@ -67,11 +67,18 @@
     if (qaLevel == null && typeof G.loadSession === 'function') restored = G.loadSession();
     var savedRows = G.ROWS;
     var savedCols = G.COLS;
-    G.applyGridSize();
+    // 복구한 경우 저장된 그리드 크기 유지하며 레이아웃만 재계산(캔버스 크기 반영)
+    if (restored) {
+      G.applyGridSize(savedRows, savedCols);
+    } else {
+      G.applyGridSize();
+    }
     if (restored && (G.ROWS !== savedRows || G.COLS !== savedCols)) G.initGrid();
     if (!restored) {
       G.initGrid();
     }
+    // 맞출 수 없으면 자동으로 다시 배치(리셔플)
+    if (typeof G.ensurePlayableBoard === 'function') G.ensurePlayableBoard();
     G.updateProgressBar();
     G.startLevelTimer();
     if (qaLevel != null) {
