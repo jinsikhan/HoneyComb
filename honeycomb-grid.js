@@ -138,12 +138,10 @@
   }
   /** 레벨에 따른 보드 중간 빈 슬롯(구멍) 개수. 난이도 상승 시 빈 자리 증가 */
   G.getHoleCountForLevel = function (lv) {
-    if (lv <= 14) return 0;
-    if (lv <= 24) return 1;
-    if (lv <= 34) return 2;
-    if (lv <= 44) return 3;
-    if (lv <= 54) return 4;
-    return 5;
+    if (lv <= 64) return 0;
+    if (lv <= 66) return 1;
+    if (lv <= 68) return 2;
+    return 3;
   };
   function diamondChanceForLevel(lv) {
     return Math.min(0.48, 0.26 + lv * 0.0075);

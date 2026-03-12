@@ -346,8 +346,8 @@ async function runQA() {
     // ── K. 인접 구멍(hole) 해제 검증 ─────────────────────────────────────────
     console.log('\n[K] 인접 구멍 해제');
     {
-      // Lv.20: 구멍이 1개 생기는 레벨
-      const { page } = await freshPage(levelUrl(20));
+      // Lv.65: 구멍이 처음 생기는 레벨
+      const { page } = await freshPage(levelUrl(65));
       const result = await page.evaluate(() => {
         const G = window.HoneyComb;
         if (!G || !G.ROWS) return null;
