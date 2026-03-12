@@ -562,6 +562,8 @@
       var k = t.r + ',' + t.c;
       if (seen[k]) continue;
       seen[k] = true;
+      // 빈칸(구멍/범위 밖/null)은 리필 대상에서 제외
+      if (!G.get(t.r, t.c)) continue;
       list.push(t);
     }
     var diamondCount = G.countDiamondsExcluding(list);
@@ -572,8 +574,9 @@
       var needKeys = G.getKeysRequiredForLevel(G.level) > 0;
       var allowKey = needKeys && keyCount < G.maxKeysOnGrid();
       G.set(t.r, t.c, G.randCellNoMatch(t.r, t.c, allowDiamond, !!allowChainMatch, allowKey));
-      if (G.get(t.r, t.c).diamond) diamondCount++;
-      if (G.get(t.r, t.c).key) keyCount++;
+      var cc = G.get(t.r, t.c);
+      if (cc && cc.diamond) diamondCount++;
+      if (cc && cc.key) keyCount++;
     }
     G.totalRemoved += list.length;
     ensureMinimumDiamonds();
