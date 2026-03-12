@@ -170,47 +170,57 @@
     G.draw();
     G.removeDrawLoop();
     setTimeout(function () {
-      G.refillOnlyRemoved(unique, G.comboCount >= 2);
-      G.refillAnim = { cells: unique.map(function (t) { return { r: t.r, c: t.c }; }), start: Date.now(), duration: G.REFILL_ANIM_MS };
-      G.removeAnim = null;
-      G.draw();
+      try {
+        G.refillOnlyRemoved(unique, G.comboCount >= 2);
+        G.refillAnim = { cells: unique.map(function (t) { return { r: t.r, c: t.c }; }), start: Date.now(), duration: G.REFILL_ANIM_MS };
+        G.removeAnim = null;
+        G.draw();
 
-      var nextToRemove = G.findAllMatchesMerged();
-      var nextGroup = (nextToRemove && nextToRemove.length >= 3) ? nextToRemove : null;
+        var nextToRemove = G.findAllMatchesMerged();
+        var nextGroup = (nextToRemove && nextToRemove.length >= 3) ? nextToRemove : null;
 
-      if (nextGroup && nextGroup.length >= 3) {
-        var nextCopy = nextGroup.map(function (p) { return { r: p.r, c: p.c }; });
-        var delay = G.REFILL_ANIM_MS + G.CHAIN_PAUSE_AFTER_REFILL_MS;
-        G.chainStepTimerId = setTimeout(function () {
-          G.chainStepTimerId = null;
-          G.applyRemove(nextCopy, fromSwap);
-        }, delay);
-        G.chainDrawLoop();
-        return;
-      }
-      G.chainInProgress = false;
-      if (G.chainStepTimerId != null) clearTimeout(G.chainStepTimerId);
-      G.chainStepTimerId = null;
+        if (nextGroup && nextGroup.length >= 3) {
+          var nextCopy = nextGroup.map(function (p) { return { r: p.r, c: p.c }; });
+          var delay = G.REFILL_ANIM_MS + G.CHAIN_PAUSE_AFTER_REFILL_MS;
+          G.chainStepTimerId = setTimeout(function () {
+            G.chainStepTimerId = null;
+            G.applyRemove(nextCopy, fromSwap);
+          }, delay);
+          G.chainDrawLoop();
+          return;
+        }
+        G.chainInProgress = false;
+        if (G.chainStepTimerId != null) clearTimeout(G.chainStepTimerId);
+        G.chainStepTimerId = null;
 
-      G.ensurePlayableBoard();
+        G.ensurePlayableBoard();
 
-      if (G.scoreEl) G.scoreEl.textContent = G.score;
-      var needToNext = G.getDiamondsToNextLevel(G.level);
-      var keysNeed = G.getKeysRequiredForLevel(G.level);
-      G.updateProgressBar();
+        if (G.scoreEl) G.scoreEl.textContent = G.score;
+        var needToNext = G.getDiamondsToNextLevel(G.level);
+        var keysNeed = G.getKeysRequiredForLevel(G.level);
+        G.updateProgressBar();
 
-      if (G.diamondsRemovedThisLevel >= needToNext && G.keysCollectedThisLevel >= keysNeed) {
-        G.pendingLevelUp = true;
-        // 타이머 임박/오버레이 상태에서도 미션 완료가 우선이므로 오버레이를 숨긴다.
-        G.gameOver = false;
-        if (G.gameOverOverlay) G.gameOverOverlay.setAttribute('hidden', '');
+        if (G.diamondsRemovedThisLevel >= needToNext && G.keysCollectedThisLevel >= keysNeed) {
+          G.pendingLevelUp = true;
+          G.gameOver = false;
+          if (G.gameOverOverlay) G.gameOverOverlay.setAttribute('hidden', '');
+          G.comboDrawLoop();
+          if (typeof G.saveSession === 'function') G.saveSession(true);
+          return;
+        }
+        G.resetInputState();
         G.comboDrawLoop();
         if (typeof G.saveSession === 'function') G.saveSession(true);
-        return;
+      } catch (err) {
+        G.chainInProgress = false;
+        if (G.chainStepTimerId != null) clearTimeout(G.chainStepTimerId);
+        G.chainStepTimerId = null;
+        G.refillAnim = null;
+        G.removeAnim = null;
+        G.resetInputState();
+        if (typeof G.draw === 'function') G.draw();
+        if (typeof G.saveSession === 'function') G.saveSession(true);
       }
-      G.resetInputState();
-      G.comboDrawLoop();
-      if (typeof G.saveSession === 'function') G.saveSession(true);
     }, G.REMOVE_ANIM_MS);
   };
 
@@ -245,6 +255,8 @@
     }
     if (now < G.comboShowUntil || now < G.matchFlashUntil || now < G.bigTextUntil || now < G.badgeUntil || G.scorePopups.length > 0) {
       requestAnimationFrame(G.comboDrawLoop);
+    } else {
+      G.draw();
     }
   };
 

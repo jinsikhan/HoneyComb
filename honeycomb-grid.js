@@ -45,24 +45,28 @@
 
   /**
    * 레벨 70까지 밸런스. 정사각형이 아닌 행×열 조합으로 단계별 확대.
-   * 행/열을 고정 공식이 아니라 (rows, cols) 조합으로 두어 4×5, 6×7 등 다양하게 사용.
+   * 퍼센티지처럼 조금씩 늘리기 위해 단계를 촘촘히(약 5레벨마다 한 단계).
    */
   G.getGridSize = function (lv) {
     var capped = Math.min(Math.max(1, lv), 70);
-    // 레벨 구간별 (rows, cols) — 10구간, 비정사각형 비중 높임
+    // 레벨 구간별 (rows, cols) — 14단계, 5레벨마다 한 단계로 완만히 확대
     var steps = [
-      { rows: 4, cols: 4 },   // 1–7
-      { rows: 4, cols: 5 },   // 8–14
-      { rows: 5, cols: 6 },   // 15–21
-      { rows: 6, cols: 6 },   // 22–28
-      { rows: 6, cols: 7 },   // 29–35
-      { rows: 7, cols: 8 },   // 36–42
-      { rows: 8, cols: 8 },   // 43–49
-      { rows: 8, cols: 9 },   // 50–56
-      { rows: 9, cols: 10 },  // 57–63
-      { rows: 10, cols: 11 }  // 64–70
+      { rows: 4, cols: 4 },   // 1–5
+      { rows: 4, cols: 5 },   // 6–10
+      { rows: 5, cols: 5 },   // 11–15
+      { rows: 5, cols: 6 },   // 16–20
+      { rows: 6, cols: 6 },   // 21–25
+      { rows: 6, cols: 7 },   // 26–30
+      { rows: 7, cols: 7 },   // 31–35
+      { rows: 7, cols: 8 },   // 36–40
+      { rows: 8, cols: 8 },   // 41–45
+      { rows: 8, cols: 9 },   // 46–50
+      { rows: 9, cols: 9 },   // 51–55
+      { rows: 9, cols: 10 },  // 56–60
+      { rows: 10, cols: 10 }, // 61–65
+      { rows: 10, cols: 11 }  // 66–70
     ];
-    var step = Math.min(steps.length - 1, Math.floor((capped - 1) / 7));
+    var step = Math.min(steps.length - 1, Math.floor((capped - 1) / 5));
     var sz = steps[step];
     return { rows: sz.rows, cols: sz.cols };
   };
