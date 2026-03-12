@@ -60,6 +60,7 @@
     }
     if (G.hexAnim) return;
     if (G.swapAnim) return;
+    if (G.ensurePlayableBoard()) return;
     var h = G.pixelToHex(px, py);
     if (!h) return;
     var cell = G.get(h.r, h.c);

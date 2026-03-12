@@ -94,8 +94,8 @@
   G.getColorsForLevel = function (lv) {
     // Lv.70까지는 최대 6색, Lv.71부터 7번째 색을 추가해 난이도 한 단계 상승
     var cap = (lv >= 71) ? 7 : 6;
-    // 초반 소규모 보드(1~7)는 색을 5개로 제한 → 맞출 수 없는 상태 방지
-    if (lv <= 7) cap = Math.min(cap, 5);
+    // 초반·중반 보드(1~10)는 색을 5개로 제한 → 맞출 수 없는 상태 방지
+    if (lv <= 10) cap = Math.min(cap, 5);
     var n = Math.min(3 + lv, cap);
     return G.HEX_COLORS.slice(0, n);
   };
@@ -469,6 +469,16 @@
       ensureMinimumDiamonds();
     }
     if (!G.hasValidMove()) forceValidMove();
+  };
+
+  /** 맞출 게 없으면 새로 배치 후 그리기. (연쇄 종료 시·클릭 시 공통) 리셔플했으면 true. */
+  G.ensurePlayableBoard = function () {
+    if (!G.hasValidMove() && typeof G.reshuffleBoard === 'function') {
+      G.reshuffleBoard();
+      if (typeof G.draw === 'function') G.draw();
+      return true;
+    }
+    return false;
   };
 
   G.findAllMatchesMerged = function () {

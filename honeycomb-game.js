@@ -192,7 +192,7 @@
       if (G.chainStepTimerId != null) clearTimeout(G.chainStepTimerId);
       G.chainStepTimerId = null;
 
-      if (!G.hasValidMove() && typeof G.reshuffleBoard === 'function') G.reshuffleBoard();
+      G.ensurePlayableBoard();
 
       if (G.scoreEl) G.scoreEl.textContent = G.score;
       var needToNext = G.getDiamondsToNextLevel(G.level);
